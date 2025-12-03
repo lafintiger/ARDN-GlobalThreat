@@ -278,6 +278,19 @@ function ARDNTaunts({
     }
   }, [threatLevel, gameActive, getRandomTaunt, showTaunt])
 
+  // Test function to manually trigger a taunt (for debugging)
+  const testTaunt = useCallback(() => {
+    console.log('[TEST] Manual taunt trigger, voiceEnabled:', voiceEnabled, 'ttsAvailable:', ttsAvailable)
+    showTaunt("I am watching you, human.", true)
+  }, [showTaunt, voiceEnabled, ttsAvailable])
+  
+  // Expose test function globally for console debugging
+  useEffect(() => {
+    window.testARDNTaunt = testTaunt
+    console.log('[TTS] Test function available: window.testARDNTaunt()')
+    return () => { delete window.testARDNTaunt }
+  }, [testTaunt])
+
   return (
     <AnimatePresence>
       {currentTaunt && (

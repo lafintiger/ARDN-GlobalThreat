@@ -102,9 +102,26 @@ class TTSService:
     
     async def _synthesize_piper(self, text: str) -> Optional[bytes]:
         """Synthesize using Piper (high quality)."""
+        # Collect all audio chunks
+        audio_data = b''
+        sample_rate = 22050
+        sample_width = 2
+        channels = 1
+        
+        for chunk in self._piper_voice.synthesize(text):
+            audio_data += chunk.audio_int16_bytes
+            sample_rate = chunk.sample_rate
+            sample_width = chunk.sample_width
+            channels = chunk.sample_channels
+        
+        # Create WAV in memory
         wav_buffer = io.BytesIO()
         with wave.open(wav_buffer, 'wb') as wav_file:
-            self._piper_voice.synthesize(text, wav_file)
+            wav_file.setnchannels(channels)
+            wav_file.setsampwidth(sample_width)
+            wav_file.setframerate(sample_rate)
+            wav_file.writeframes(audio_data)
+        
         wav_buffer.seek(0)
         return wav_buffer.read()
     
