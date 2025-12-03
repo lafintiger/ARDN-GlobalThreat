@@ -19,6 +19,8 @@ class Domain:
     status: str = "SCANNING"
     attack_speed: float = 1.0
     is_active: bool = True
+    is_locked: bool = False  # When True, sector won't increase
+    is_secured: bool = False  # Fully secured (0% and locked)
 
 @dataclass 
 class Password:
@@ -220,6 +222,69 @@ class GameState:
         """Directly set a domain's compromise percentage."""
         if domain_id in self.domains:
             self.domains[domain_id].compromise_percent = max(0, min(100, percent))
+            # If set to 0 and locked, mark as secured
+            if percent <= 0 and self.domains[domain_id].is_locked:
+                self.domains[domain_id].is_secured = True
+            self._update_global_threat()
+            return True
+        return False
+    
+    def adjust_domain(self, domain_id: str, adjustment: float, lock: bool = False) -> dict:
+        """
+        Adjust a domain's compromise by a percentage amount.
+        Negative = reduce compromise, Positive = increase compromise
+        """
+        if domain_id not in self.domains:
+            return {"success": False, "message": "Domain not found"}
+        
+        domain = self.domains[domain_id]
+        old_percent = domain.compromise_percent
+        domain.compromise_percent = max(0, min(100, domain.compromise_percent + adjustment))
+        
+        if lock:
+            domain.is_locked = True
+            if domain.compromise_percent <= 0:
+                domain.is_secured = True
+        
+        self._update_global_threat()
+        
+        return {
+            "success": True,
+            "domain_id": domain_id,
+            "old_percent": old_percent,
+            "new_percent": domain.compromise_percent,
+            "is_locked": domain.is_locked,
+            "is_secured": domain.is_secured
+        }
+    
+    def adjust_all_domains(self, adjustment: float) -> dict:
+        """Adjust all domains by a percentage amount."""
+        results = []
+        for domain_id in self.domains:
+            result = self.adjust_domain(domain_id, adjustment, lock=False)
+            if result["success"]:
+                results.append(result)
+        
+        self._update_global_threat()
+        return {"success": True, "adjusted": results}
+    
+    def lock_domain(self, domain_id: str, lock: bool = True) -> bool:
+        """Lock or unlock a domain."""
+        if domain_id in self.domains:
+            domain = self.domains[domain_id]
+            domain.is_locked = lock
+            if not lock:
+                domain.is_secured = False  # Unlocking removes secured status
+            return True
+        return False
+    
+    def secure_domain(self, domain_id: str) -> bool:
+        """Fully secure a domain (0% and locked)."""
+        if domain_id in self.domains:
+            domain = self.domains[domain_id]
+            domain.compromise_percent = 0.0
+            domain.is_locked = True
+            domain.is_secured = True
             self._update_global_threat()
             return True
         return False
@@ -252,7 +317,9 @@ class GameState:
                     "description": d.description,
                     "compromise_percent": round(d.compromise_percent, 1),
                     "status": self._get_domain_status(d),
-                    "is_active": d.is_active
+                    "is_active": d.is_active,
+                    "is_locked": d.is_locked,
+                    "is_secured": d.is_secured
                 }
                 for id, d in self.domains.items()
             },
@@ -266,6 +333,10 @@ class GameState:
     
     def _get_domain_status(self, domain: Domain) -> str:
         """Determine domain status based on compromise level."""
+        if domain.is_secured:
+            return "SECURED"
+        if domain.is_locked:
+            return "LOCKED"
         if domain.compromise_percent >= 100:
             return "COMPROMISED"
         elif domain.compromise_percent >= 75:
@@ -298,11 +369,25 @@ class GameState:
         while self.game_active:
             base_increment = self._calculate_attack_increment()
             
+            # Count unlocked sectors for potential difficulty compensation
+            unlocked_count = sum(1 for d in self.domains.values() if not d.is_locked and d.is_active)
+            locked_count = len(self.domains) - unlocked_count
+            
+            # Optional: increase attack speed on remaining sectors if some are locked
+            compensation_multiplier = 1.0
+            if locked_count > 0 and unlocked_count > 0:
+                # Mild compensation - attack spreads to remaining sectors
+                compensation_multiplier = 1.0 + (locked_count * 0.05)  # 5% faster per locked sector
+            
             for domain in self.domains.values():
+                # Skip locked or secured sectors
+                if domain.is_locked or domain.is_secured:
+                    continue
+                    
                 if domain.is_active and domain.compromise_percent < 100:
                     # Apply increment with domain-specific speed variation
                     variation = random.uniform(0.7, 1.3)
-                    increment = base_increment * domain.attack_speed * variation
+                    increment = base_increment * domain.attack_speed * variation * compensation_multiplier
                     domain.compromise_percent = min(100, domain.compromise_percent + increment)
             
             self._update_global_threat()
@@ -331,6 +416,10 @@ class GameState:
         # Reset password usage
         for pw in self.passwords.values():
             pw.used = False
+        # Reset all domain locks
+        for domain in self.domains.values():
+            domain.is_locked = False
+            domain.is_secured = False
 
 
 # Global game state instance

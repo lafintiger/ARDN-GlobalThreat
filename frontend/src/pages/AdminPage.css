@@ -1,0 +1,572 @@
+/* Admin Page Styles */
+.admin-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+  color: #e0e0e0;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.admin-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: #0ff;
+}
+
+/* Notification */
+.admin-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.admin-notification.success {
+  background: linear-gradient(135deg, #00aa44, #00ff66);
+  color: #000;
+}
+
+.admin-notification.error {
+  background: linear-gradient(135deg, #aa0000, #ff3333);
+  color: #fff;
+}
+
+/* Header */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid #0ff3;
+}
+
+.admin-title h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.5rem;
+  color: #0ff;
+  margin: 0;
+  letter-spacing: 3px;
+}
+
+.back-link {
+  color: #888;
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: #0ff;
+}
+
+.admin-status {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+}
+
+.status-badge.active {
+  background: rgba(255, 42, 42, 0.2);
+  border: 1px solid #ff3333;
+  color: #ff3333;
+  animation: pulse-badge 1s infinite;
+}
+
+.status-badge.inactive {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #666;
+  color: #888;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.threat-level {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+}
+
+/* Content Grid */
+.admin-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Panels */
+.admin-panel {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #0ff3;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.admin-panel h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  color: #0ff;
+  margin: 0 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #0ff3;
+  letter-spacing: 2px;
+}
+
+/* Game Controls */
+.game-controls {
+  grid-column: span 2;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.control-group label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  color: #888;
+  min-width: 120px;
+}
+
+.duration-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.duration-input {
+  width: 60px;
+  padding: 8px;
+  background: #0a0a0f;
+  border: 1px solid #0ff3;
+  color: #0ff;
+  font-family: 'Share Tech Mono', monospace;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 1px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.7rem;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, #00aa44, #00ff66);
+  color: #000;
+}
+
+.btn-stop {
+  background: linear-gradient(135deg, #aa6600, #ffaa00);
+  color: #000;
+}
+
+.btn-reset {
+  background: linear-gradient(135deg, #aa0000, #ff3333);
+  color: #fff;
+}
+
+.btn-duration {
+  background: transparent;
+  border: 1px solid #0ff3;
+  color: #0ff;
+}
+
+.btn-duration.active {
+  background: #0ff;
+  color: #000;
+}
+
+.btn-reduce {
+  background: #006644;
+  color: #0f0;
+}
+
+.btn-reduce:hover {
+  background: #008855;
+}
+
+.btn-increase {
+  background: #664400;
+  color: #fa0;
+}
+
+.btn-increase:hover {
+  background: #885500;
+}
+
+.btn-secure {
+  background: linear-gradient(135deg, #006688, #00ccff);
+  color: #000;
+}
+
+.btn-lock {
+  background: #444;
+  color: #fff;
+}
+
+.btn-unlock {
+  background: #666;
+  color: #0f0;
+}
+
+.btn-complete {
+  background: #006644;
+  color: #0f0;
+}
+
+.btn-fail {
+  background: #664400;
+  color: #fa0;
+}
+
+.btn-reset-mission {
+  background: #333;
+  color: #888;
+}
+
+.btn-global {
+  background: linear-gradient(135deg, #0066aa, #00aaff);
+  color: #fff;
+  padding: 12px 24px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Sectors Panel */
+.sectors-panel {
+  grid-column: span 2;
+}
+
+.sectors-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.sector-card {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.3s;
+}
+
+.sector-card.secured {
+  border-color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.sector-card.locked {
+  border-color: #ffcc00;
+  background: rgba(255, 204, 0, 0.05);
+}
+
+.sector-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sector-icon {
+  font-size: 1.2rem;
+}
+
+.sector-name {
+  flex: 1;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sector-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #333;
+}
+
+.sector-status.secured { background: #006644; color: #0f0; }
+.sector-status.locked { background: #664400; color: #fa0; }
+.sector-status.scanning { background: #003366; color: #0af; }
+.sector-status.breaching { background: #664400; color: #fa0; }
+.sector-status.attacking { background: #663300; color: #f60; }
+.sector-status.critical { background: #660000; color: #f33; }
+.sector-status.compromised { background: #330000; color: #f00; }
+
+.sector-percent {
+  position: relative;
+  height: 20px;
+  background: #1a1a2e;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.percent-bar {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.sector-percent span {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  color: #fff;
+  text-shadow: 0 0 5px #000;
+}
+
+.sector-controls {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.global-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+/* Missions Panel */
+.missions-panel {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.missions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mission-card {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.mission-card.completed {
+  border-color: #00ff88;
+  opacity: 0.7;
+}
+
+.mission-card.failed {
+  border-color: #ff3333;
+  opacity: 0.7;
+}
+
+.mission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mission-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.mission-status {
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.mission-status.pending { background: #333; color: #888; }
+.mission-status.completed { background: #006644; color: #0f0; }
+.mission-status.failed { background: #660000; color: #f33; }
+
+.mission-details {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.mission-reward { color: #0f0; }
+.mission-penalty { color: #f60; }
+.mission-lock { color: #fa0; }
+
+.mission-controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* Event Log */
+.log-panel {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.event-log {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.log-entry {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.log-time {
+  color: #666;
+  min-width: 60px;
+}
+
+.log-type {
+  color: #0ff;
+  min-width: 120px;
+}
+
+.log-entry.mission_complete .log-type { color: #0f0; }
+.log-entry.mission_failed .log-type { color: #f60; }
+.log-entry.sector_adjust .log-type { color: #0af; }
+.log-entry.sector_secured .log-type { color: #0f0; }
+
+.log-details {
+  color: #888;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-empty {
+  color: #444;
+  text-align: center;
+  padding: 20px;
+}
+
+/* API Reference */
+.api-panel {
+  grid-column: span 2;
+}
+
+.api-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.api-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.api-item code {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  color: #0f0;
+  min-width: 280px;
+}
+
+.api-item span {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .sectors-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .sectors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .game-controls,
+  .sectors-panel,
+  .api-panel {
+    grid-column: span 1;
+  }
+}
+
+/* Scrollbar */
+.missions-panel::-webkit-scrollbar,
+.log-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.missions-panel::-webkit-scrollbar-track,
+.log-panel::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+
+.missions-panel::-webkit-scrollbar-thumb,
+.log-panel::-webkit-scrollbar-thumb {
+  background: #0ff3;
+  border-radius: 3px;
+}
+

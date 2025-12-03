@@ -15,6 +15,7 @@ import json
 from game_state import game_state, Password
 from ollama_service import generate_ollama_attack, generate_fallback_sequence
 from ollama_chat import chat_with_ardn
+from missions import mission_manager, Mission, MissionStatus, AdjustmentType
 
 app = FastAPI(title="A.R.D.N. Control Interface")
 
@@ -189,11 +190,327 @@ async def reset_game():
     """Reset the game to initial state"""
     await game_state.stop_attack_simulation()
     game_state.reset()
+    mission_manager.reset_all_missions()
     await manager.broadcast({
         "type": "state_update",
         "data": game_state.get_state()
     })
     return {"success": True, "message": "Game reset"}
+
+
+# ============================================
+# MISSION API ENDPOINTS
+# Simple API for external puzzle triggers
+# ============================================
+
+class SectorAdjustment(BaseModel):
+    sector_id: str
+    adjustment: float  # Negative = reduce, Positive = increase
+    lock: bool = False
+
+class AllSectorAdjustment(BaseModel):
+    adjustment: float
+
+class MissionTrigger(BaseModel):
+    mission_id: str
+
+class MissionCreate(BaseModel):
+    id: str
+    name: str
+    description: str = ""
+    adjustment_type: str = "single"  # single, all, multiple
+    target_sector: Optional[str] = None
+    target_sectors: List[str] = []
+    success_reduction: float = 20.0
+    failure_penalty: float = 10.0
+    lock_on_complete: bool = False
+    max_attempts: int = 0
+
+
+@app.get("/api/missions")
+async def get_missions():
+    """Get all missions and their status"""
+    return {
+        "missions": mission_manager.get_all_missions(),
+        "event_log": mission_manager.get_event_log(20)
+    }
+
+
+@app.post("/api/mission/complete")
+async def complete_mission(trigger: MissionTrigger):
+    """
+    Mark a mission as completed - reduces sector compromise.
+    Called by external puzzles when solved successfully.
+    """
+    mission = mission_manager.get_mission(trigger.mission_id)
+    
+    if not mission:
+        return {"success": False, "message": f"Mission '{trigger.mission_id}' not found"}
+    
+    if mission.status == MissionStatus.COMPLETED:
+        return {"success": False, "message": "Mission already completed"}
+    
+    if mission.max_attempts > 0 and mission.current_attempts >= mission.max_attempts:
+        return {"success": False, "message": "No attempts remaining"}
+    
+    # Mark as completed
+    mission.status = MissionStatus.COMPLETED
+    mission.completed_at = __import__('time').time()
+    
+    # Apply the reduction based on adjustment type
+    affected_sectors = []
+    reduction = -mission.success_reduction  # Negative to reduce
+    
+    if mission.adjustment_type == AdjustmentType.ALL_SECTORS:
+        result = game_state.adjust_all_domains(reduction)
+        affected_sectors = [r["domain_id"] for r in result.get("adjusted", [])]
+    elif mission.adjustment_type == AdjustmentType.MULTIPLE_SECTORS:
+        for sector_id in mission.target_sectors:
+            result = game_state.adjust_domain(sector_id, reduction, lock=mission.lock_on_complete)
+            if result["success"]:
+                affected_sectors.append(sector_id)
+    else:  # SINGLE_SECTOR
+        if mission.target_sector:
+            result = game_state.adjust_domain(
+                mission.target_sector, 
+                reduction, 
+                lock=mission.lock_on_complete
+            )
+            if result["success"]:
+                affected_sectors.append(mission.target_sector)
+    
+    # Log the event
+    mission_manager.log_event("mission_complete", {
+        "mission_id": mission.id,
+        "mission_name": mission.name,
+        "reduction": mission.success_reduction,
+        "affected_sectors": affected_sectors,
+        "locked": mission.lock_on_complete
+    })
+    
+    # Broadcast state update
+    await manager.broadcast({
+        "type": "state_update",
+        "data": game_state.get_state()
+    })
+    await manager.broadcast({
+        "type": "mission_complete",
+        "data": {
+            "mission_id": mission.id,
+            "mission_name": mission.name,
+            "reduction": mission.success_reduction,
+            "affected_sectors": affected_sectors
+        }
+    })
+    
+    return {
+        "success": True,
+        "message": f"Mission '{mission.name}' completed!",
+        "reduction": mission.success_reduction,
+        "affected_sectors": affected_sectors,
+        "locked": mission.lock_on_complete
+    }
+
+
+@app.post("/api/mission/failed")
+async def fail_mission(trigger: MissionTrigger):
+    """
+    Record a mission failure - increases sector compromise as penalty.
+    Called by external puzzles when player fails.
+    """
+    mission = mission_manager.get_mission(trigger.mission_id)
+    
+    if not mission:
+        return {"success": False, "message": f"Mission '{trigger.mission_id}' not found"}
+    
+    if mission.status == MissionStatus.COMPLETED:
+        return {"success": False, "message": "Mission already completed"}
+    
+    # Increment attempt counter
+    mission.current_attempts += 1
+    
+    # Check if out of attempts
+    if mission.max_attempts > 0 and mission.current_attempts >= mission.max_attempts:
+        mission.status = MissionStatus.FAILED
+    
+    # Apply the penalty based on adjustment type
+    affected_sectors = []
+    penalty = mission.failure_penalty  # Positive to increase
+    
+    if mission.adjustment_type == AdjustmentType.ALL_SECTORS:
+        result = game_state.adjust_all_domains(penalty)
+        affected_sectors = [r["domain_id"] for r in result.get("adjusted", [])]
+    elif mission.adjustment_type == AdjustmentType.MULTIPLE_SECTORS:
+        for sector_id in mission.target_sectors:
+            result = game_state.adjust_domain(sector_id, penalty)
+            if result["success"]:
+                affected_sectors.append(sector_id)
+    else:  # SINGLE_SECTOR
+        if mission.target_sector:
+            result = game_state.adjust_domain(mission.target_sector, penalty)
+            if result["success"]:
+                affected_sectors.append(mission.target_sector)
+    
+    # Log the event
+    mission_manager.log_event("mission_failed", {
+        "mission_id": mission.id,
+        "mission_name": mission.name,
+        "penalty": mission.failure_penalty,
+        "affected_sectors": affected_sectors,
+        "attempts_used": mission.current_attempts,
+        "max_attempts": mission.max_attempts
+    })
+    
+    # Broadcast state update
+    await manager.broadcast({
+        "type": "state_update",
+        "data": game_state.get_state()
+    })
+    await manager.broadcast({
+        "type": "mission_failed",
+        "data": {
+            "mission_id": mission.id,
+            "mission_name": mission.name,
+            "penalty": mission.failure_penalty,
+            "affected_sectors": affected_sectors
+        }
+    })
+    
+    return {
+        "success": True,
+        "message": f"Mission '{mission.name}' failure recorded",
+        "penalty": mission.failure_penalty,
+        "affected_sectors": affected_sectors,
+        "attempts_remaining": max(0, mission.max_attempts - mission.current_attempts) if mission.max_attempts > 0 else "unlimited"
+    }
+
+
+@app.post("/api/mission/reset/{mission_id}")
+async def reset_mission(mission_id: str):
+    """Reset a specific mission to pending state"""
+    if mission_manager.reset_mission(mission_id):
+        mission_manager.log_event("mission_reset", {"mission_id": mission_id})
+        return {"success": True, "message": f"Mission '{mission_id}' reset"}
+    return {"success": False, "message": "Mission not found"}
+
+
+@app.post("/api/mission/create")
+async def create_mission(mission_data: MissionCreate):
+    """Create a new mission (admin function)"""
+    adj_type = {
+        "single": AdjustmentType.SINGLE_SECTOR,
+        "all": AdjustmentType.ALL_SECTORS,
+        "multiple": AdjustmentType.MULTIPLE_SECTORS
+    }.get(mission_data.adjustment_type, AdjustmentType.SINGLE_SECTOR)
+    
+    mission = Mission(
+        id=mission_data.id,
+        name=mission_data.name,
+        description=mission_data.description,
+        adjustment_type=adj_type,
+        target_sector=mission_data.target_sector,
+        target_sectors=mission_data.target_sectors,
+        success_reduction=mission_data.success_reduction,
+        failure_penalty=mission_data.failure_penalty,
+        lock_on_complete=mission_data.lock_on_complete,
+        max_attempts=mission_data.max_attempts
+    )
+    
+    if mission_manager.add_mission(mission):
+        return {"success": True, "message": f"Mission '{mission.name}' created"}
+    return {"success": False, "message": "Mission ID already exists"}
+
+
+@app.delete("/api/mission/{mission_id}")
+async def delete_mission(mission_id: str):
+    """Delete a mission"""
+    if mission_manager.remove_mission(mission_id):
+        return {"success": True, "message": f"Mission '{mission_id}' deleted"}
+    return {"success": False, "message": "Mission not found"}
+
+
+# ============================================
+# SECTOR CONTROL API
+# Direct sector manipulation for game master
+# ============================================
+
+@app.post("/api/sector/adjust")
+async def adjust_sector(data: SectorAdjustment):
+    """
+    Directly adjust a sector's compromise level.
+    Use negative values to reduce, positive to increase.
+    """
+    result = game_state.adjust_domain(data.sector_id, data.adjustment, data.lock)
+    
+    if result["success"]:
+        mission_manager.log_event("sector_adjust", {
+            "sector_id": data.sector_id,
+            "adjustment": data.adjustment,
+            "locked": data.lock,
+            "new_percent": result["new_percent"]
+        })
+        
+        await manager.broadcast({
+            "type": "state_update",
+            "data": game_state.get_state()
+        })
+    
+    return result
+
+
+@app.post("/api/sector/adjust-all")
+async def adjust_all_sectors(data: AllSectorAdjustment):
+    """Adjust all sectors by the same amount."""
+    result = game_state.adjust_all_domains(data.adjustment)
+    
+    mission_manager.log_event("all_sectors_adjust", {
+        "adjustment": data.adjustment,
+        "sectors_affected": len(result.get("adjusted", []))
+    })
+    
+    await manager.broadcast({
+        "type": "state_update",
+        "data": game_state.get_state()
+    })
+    
+    return result
+
+
+@app.post("/api/sector/lock/{sector_id}")
+async def lock_sector(sector_id: str, lock: bool = True):
+    """Lock or unlock a sector."""
+    if game_state.lock_domain(sector_id, lock):
+        mission_manager.log_event("sector_lock", {
+            "sector_id": sector_id,
+            "locked": lock
+        })
+        await manager.broadcast({
+            "type": "state_update",
+            "data": game_state.get_state()
+        })
+        return {"success": True, "message": f"Sector '{sector_id}' {'locked' if lock else 'unlocked'}"}
+    return {"success": False, "message": "Sector not found"}
+
+
+@app.post("/api/sector/secure/{sector_id}")
+async def secure_sector(sector_id: str):
+    """Fully secure a sector (0% and locked)."""
+    if game_state.secure_domain(sector_id):
+        mission_manager.log_event("sector_secured", {
+            "sector_id": sector_id
+        })
+        await manager.broadcast({
+            "type": "state_update",
+            "data": game_state.get_state()
+        })
+        return {"success": True, "message": f"Sector '{sector_id}' fully secured"}
+    return {"success": False, "message": "Sector not found"}
+
+
+@app.get("/api/events")
+async def get_event_log(limit: int = 50):
+    """Get recent game events."""
+    return {"events": mission_manager.get_event_log(limit)}
 
 
 # WebSocket endpoints
