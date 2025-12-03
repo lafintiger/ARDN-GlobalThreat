@@ -11,6 +11,10 @@ function AdminPage() {
   const [eventLog, setEventLog] = useState([])
   const [sessionMinutes, setSessionMinutes] = useState(60)
   const [notification, setNotification] = useState(null)
+  const [challenges, setChallenges] = useState([])
+  const [challengeStats, setChallengeStats] = useState({ completed: 0, failed: 0 })
+  const [activeChallenge, setActiveChallenge] = useState(null)
+  const [chatSession, setChatSession] = useState(null)
 
   // Override global overflow:hidden for this page
   useEffect(() => {
@@ -41,16 +45,25 @@ function AdminPage() {
   useEffect(() => {
     const fetchState = async () => {
       try {
-        const [stateRes, missionsRes] = await Promise.all([
+        const [stateRes, missionsRes, challengesRes, chatRes] = await Promise.all([
           fetch(`${API_BASE}/api/state`),
-          fetch(`${API_BASE}/api/missions`)
+          fetch(`${API_BASE}/api/missions`),
+          fetch(`${API_BASE}/api/challenges`),
+          fetch(`${API_BASE}/api/chat/session`)
         ])
         const state = await stateRes.json()
         const missionsData = await missionsRes.json()
+        const challengesData = await challengesRes.json()
+        const chatData = await chatRes.json()
+        
         setGameState(state)
         setMissions(missionsData.missions || [])
         setEventLog(missionsData.event_log || [])
         setSessionMinutes(state.session_duration_minutes || 60)
+        setChallenges(challengesData.challenges || [])
+        setChallengeStats(challengesData.stats || { completed: 0, failed: 0 })
+        setActiveChallenge(challengesData.active_challenge)
+        setChatSession(chatData)
       } catch (err) {
         console.error('Failed to fetch state:', err)
       }
@@ -156,6 +169,43 @@ function AdminPage() {
   const resetMission = async (missionId) => {
     await fetch(`${API_BASE}/api/mission/reset/${missionId}`, { method: 'POST' })
     showNotification(`Mission reset: ${missionId}`)
+  }
+
+  // Challenge controls
+  const injectChallenge = async (challengeId) => {
+    const res = await fetch(`${API_BASE}/api/challenge/inject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge_id: challengeId })
+    })
+    const result = await res.json()
+    if (result.success) {
+      showNotification(`Challenge injected: ${challengeId}`, 'success')
+    } else {
+      showNotification(result.message, 'error')
+    }
+  }
+
+  const verifyChallenge = async (isCorrect) => {
+    const res = await fetch(`${API_BASE}/api/challenge/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_correct: isCorrect })
+    })
+    const result = await res.json()
+    if (result.success !== undefined) {
+      showNotification(
+        isCorrect ? `Verified CORRECT: ${result.message}` : `Verified WRONG: ${result.message}`,
+        isCorrect ? 'success' : 'error'
+      )
+    } else {
+      showNotification(result.message, 'error')
+    }
+  }
+
+  const resetChallenges = async () => {
+    await fetch(`${API_BASE}/api/challenge/reset`, { method: 'POST' })
+    showNotification('Challenges reset')
   }
 
   if (!gameState) {
@@ -343,6 +393,65 @@ function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Chat Challenges Panel */}
+        <section className="admin-panel challenges-panel">
+          <h2>🧩 Chat Challenges</h2>
+          <div className="challenge-stats">
+            <span className="stat">✓ Completed: <strong>{challengeStats.completed}</strong></span>
+            <span className="stat">✗ Failed: <strong>{challengeStats.failed}</strong></span>
+            {chatSession?.challenge_active && (
+              <span className="stat active">⏳ Challenge Active!</span>
+            )}
+          </div>
+          
+          {/* GM Override Controls */}
+          {chatSession?.challenge_active && (
+            <div className="gm-override">
+              <h4>GM Override (Force Verify)</h4>
+              <div className="override-buttons">
+                <button 
+                  onClick={() => verifyChallenge(true)} 
+                  className="btn btn-complete"
+                >
+                  ✓ CORRECT - Give Reward
+                </button>
+                <button 
+                  onClick={() => verifyChallenge(false)} 
+                  className="btn btn-fail"
+                >
+                  ✗ WRONG - Apply Penalty
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Inject Challenge */}
+          <div className="inject-challenge">
+            <h4>Inject Challenge</h4>
+            <div className="challenge-grid">
+              {challenges.filter(c => !c.used).slice(0, 6).map(challenge => (
+                <button
+                  key={challenge.id}
+                  onClick={() => injectChallenge(challenge.id)}
+                  className={`challenge-inject-btn difficulty-${challenge.difficulty}`}
+                  title={challenge.question}
+                >
+                  <span className="challenge-type">{challenge.type}</span>
+                  <span className="challenge-difficulty">{challenge.difficulty}</span>
+                  <span className="challenge-reward">
+                    {challenge.reward_type === 'time_bonus' 
+                      ? `+${challenge.reward_amount}s` 
+                      : `-${challenge.reward_amount}%`}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <button onClick={resetChallenges} className="btn btn-reset-mission">
+              ↻ Reset All Challenges
+            </button>
           </div>
         </section>
 

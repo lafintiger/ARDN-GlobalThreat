@@ -14,8 +14,9 @@ import json
 
 from game_state import game_state, Password
 from ollama_service import generate_ollama_attack, generate_fallback_sequence
-from ollama_chat import chat_with_ardn
+from ollama_chat import chat_with_ardn, get_or_create_session, ARDNChatSession
 from missions import mission_manager, Mission, MissionStatus, AdjustmentType
+from challenges import challenge_manager, CHALLENGE_LIBRARY, RewardType
 
 app = FastAPI(title="A.R.D.N. Control Interface")
 
@@ -513,6 +514,123 @@ async def get_event_log(limit: int = 50):
     return {"events": mission_manager.get_event_log(limit)}
 
 
+# ============================================
+# CHALLENGE API ENDPOINTS
+# GM controls for the chat challenge system
+# ============================================
+
+class ChallengeInject(BaseModel):
+    challenge_id: str
+
+class ChallengeVerify(BaseModel):
+    is_correct: bool
+
+@app.get("/api/challenges")
+async def get_challenges():
+    """Get all available challenges."""
+    challenges = [
+        {
+            "id": c.id,
+            "type": c.challenge_type.value,
+            "question": c.question,
+            "difficulty": c.difficulty,
+            "reward_type": c.reward_type.value,
+            "reward_amount": c.reward_amount,
+            "penalty_amount": c.penalty_amount,
+            "used": c.id in challenge_manager.challenge_history
+        }
+        for c in CHALLENGE_LIBRARY.values()
+    ]
+    return {
+        "challenges": challenges,
+        "active_challenge": challenge_manager.active_challenge.id if challenge_manager.active_challenge else None,
+        "stats": {
+            "completed": get_or_create_session("main").challenges_completed,
+            "failed": get_or_create_session("main").challenges_failed
+        }
+    }
+
+
+@app.post("/api/challenge/inject")
+async def inject_challenge(data: ChallengeInject):
+    """GM injects a specific challenge into the chat."""
+    session = get_or_create_session("main")
+    result = session.inject_challenge(data.challenge_id)
+    
+    if result:
+        mission_manager.log_event("challenge_injected", {
+            "challenge_id": data.challenge_id
+        })
+        return {
+            "success": True,
+            "message": "Challenge injected",
+            "challenge_text": result
+        }
+    return {"success": False, "message": "Challenge not found"}
+
+
+@app.post("/api/challenge/verify")
+async def force_verify_challenge(data: ChallengeVerify):
+    """GM forces verification of active challenge."""
+    session = get_or_create_session("main")
+    result = session.force_verify(data.is_correct)
+    
+    if result.get("success") is not None:
+        # Apply reward or penalty
+        if result.get("reward"):
+            reward = result["reward"]
+            if reward["type"] == "time_bonus":
+                game_state.add_time_bonus(int(reward["amount"]))
+            elif reward["type"] == "sector_reduction":
+                import random
+                target = reward.get("target_sector")
+                if not target:
+                    active_sectors = [d.id for d in game_state.domains.values() if not d.is_secured]
+                    target = random.choice(active_sectors) if active_sectors else None
+                if target:
+                    game_state.adjust_domain(target, -reward["amount"])
+            elif reward["type"] == "all_reduction":
+                game_state.adjust_all_domains(-reward["amount"])
+            
+            mission_manager.log_event("challenge_verified_correct", result)
+        
+        if result.get("penalty"):
+            game_state.adjust_all_domains(result["penalty"]["amount"])
+            mission_manager.log_event("challenge_verified_wrong", result)
+        
+        await manager.broadcast({
+            "type": "state_update",
+            "data": game_state.get_state()
+        })
+        
+        return result
+    
+    return {"success": False, "message": "No active challenge"}
+
+
+@app.post("/api/challenge/reset")
+async def reset_challenges():
+    """Reset all challenge state."""
+    session = get_or_create_session("main")
+    session.reset()
+    challenge_manager.reset()
+    return {"success": True, "message": "Challenges reset"}
+
+
+@app.get("/api/chat/session")
+async def get_chat_session():
+    """Get current chat session state."""
+    session = get_or_create_session("main")
+    return {
+        "challenge_active": session.challenge_active,
+        "pending_challenge": session.pending_challenge_id,
+        "challenges_completed": session.challenges_completed,
+        "challenges_failed": session.challenges_failed,
+        "begging_count": session.begging_count,
+        "conversation_length": len(session.conversation_history)
+    }
+
+
 # WebSocket endpoints
 @app.websocket("/ws/state")
 async def websocket_state(websocket: WebSocket):
@@ -608,8 +726,91 @@ async def websocket_attack_fallback(websocket: WebSocket, domain_id: str):
 
 @app.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
-    """WebSocket for AI chat"""
+    """WebSocket for AI chat with challenge system integration"""
     await websocket.accept()
+    
+    # Get or create chat session
+    session = get_or_create_session("main")
+    
+    # Set up reward callback
+    async def apply_reward(reward: dict):
+        """Apply challenge reward to game state"""
+        reward_type = reward.get("type")
+        amount = reward.get("amount", 0)
+        target = reward.get("target_sector")
+        
+        if reward_type == "time_bonus":
+            # Add time (would need to implement in game_state)
+            game_state.add_time_bonus(int(amount))
+            mission_manager.log_event("challenge_reward", {
+                "type": "time_bonus",
+                "amount": amount
+            })
+        elif reward_type == "sector_reduction":
+            # Reduce specific sector or random if none specified
+            if target:
+                game_state.adjust_domain(target, -amount)
+            else:
+                # Pick a random active sector
+                import random
+                active_sectors = [d.id for d in game_state.domains.values() if not d.is_secured]
+                if active_sectors:
+                    target = random.choice(active_sectors)
+                    game_state.adjust_domain(target, -amount)
+            mission_manager.log_event("challenge_reward", {
+                "type": "sector_reduction",
+                "sector": target,
+                "amount": amount
+            })
+        elif reward_type == "all_reduction":
+            game_state.adjust_all_domains(-amount)
+            mission_manager.log_event("challenge_reward", {
+                "type": "all_reduction",
+                "amount": amount
+            })
+        elif reward_type == "slow_attack":
+            # Could implement attack speed reduction
+            mission_manager.log_event("challenge_reward", {
+                "type": "slow_attack",
+                "duration": amount
+            })
+        elif reward_type == "hint":
+            # Send hint via websocket
+            await websocket.send_json({
+                "type": "hint",
+                "message": "A password contains 'override'"
+            })
+        
+        # Broadcast state update
+        await manager.broadcast({
+            "type": "state_update",
+            "data": game_state.get_state()
+        })
+        await websocket.send_json({
+            "type": "challenge_reward",
+            "data": reward
+        })
+    
+    # Set up penalty callback  
+    async def apply_penalty(penalty: dict):
+        """Apply challenge penalty to game state"""
+        amount = penalty.get("amount", 5)
+        game_state.adjust_all_domains(amount)
+        mission_manager.log_event("challenge_penalty", {
+            "amount": amount
+        })
+        
+        await manager.broadcast({
+            "type": "state_update",
+            "data": game_state.get_state()
+        })
+        await websocket.send_json({
+            "type": "challenge_penalty",
+            "data": penalty
+        })
+    
+    session.set_reward_callback(apply_reward)
+    session.set_penalty_callback(apply_penalty)
     
     try:
         while True:
@@ -619,20 +820,17 @@ async def websocket_chat(websocket: WebSocket):
             if msg.get("type") == "chat":
                 user_message = msg.get("message", "")
                 
-                # Add user message to history
-                manager.chat_history.append({
-                    "role": "user",
-                    "content": user_message
-                })
+                # Update session with current threat level
+                session.update_threat_level(game_state.global_threat_level)
                 
-                # Stream AI response
+                # Stream AI response using challenge-aware session
                 ai_response = ""
                 await websocket.send_json({
                     "type": "chat_start",
                     "role": "assistant"
                 })
                 
-                async for token in chat_with_ardn(user_message, manager.chat_history):
+                async for token in session.process_message(user_message):
                     ai_response += token
                     await websocket.send_json({
                         "type": "chat_token",
@@ -643,11 +841,8 @@ async def websocket_chat(websocket: WebSocket):
                     "type": "chat_end"
                 })
                 
-                # Add AI response to history
-                manager.chat_history.append({
-                    "role": "assistant",
-                    "content": ai_response
-                })
+                # Also update legacy history for compatibility
+                manager.chat_history = session.conversation_history.copy()
                 
     except WebSocketDisconnect:
         pass

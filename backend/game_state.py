@@ -145,6 +145,20 @@ class GameState:
         remaining = (self.session_duration_minutes * 60) - elapsed
         return max(0, int(remaining))
     
+    def add_time_bonus(self, seconds: int):
+        """Add bonus time to the session (from challenge rewards)."""
+        if self.start_time is not None:
+            # Effectively subtract from elapsed time by moving start_time forward
+            self.start_time += seconds
+        # Also could extend session duration
+        # self.session_duration_minutes += seconds // 60
+    
+    def subtract_time(self, seconds: int):
+        """Remove time from the session (penalty)."""
+        if self.start_time is not None:
+            # Move start_time back to reduce remaining time
+            self.start_time -= seconds
+    
     def add_password(self, code: str, domain_id: Optional[str], reduction: float, 
                      one_time: bool = True, hint: str = "") -> bool:
         """Add a new password to the system."""
