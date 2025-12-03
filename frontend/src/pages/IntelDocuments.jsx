@@ -3,8 +3,37 @@
  * Each document contains a hidden password for players to discover
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './IntelDocuments.css'
+
+// Enable scrolling on this page (override global overflow:hidden)
+const useEnableScroll = () => {
+  useEffect(() => {
+    // Add class to body to enable scrolling
+    document.body.classList.add('intel-page-active')
+    document.documentElement.classList.add('intel-page-active')
+    
+    // Also directly set styles as backup
+    const html = document.documentElement
+    const body = document.body
+    const root = document.getElementById('root')
+    
+    html.style.cssText = 'height: auto !important; overflow: auto !important; overflow-x: hidden !important;'
+    body.style.cssText = 'height: auto !important; overflow: auto !important; overflow-x: hidden !important;'
+    if (root) {
+      root.style.cssText = 'height: auto !important; overflow: visible !important;'
+    }
+    
+    // Restore on unmount
+    return () => {
+      document.body.classList.remove('intel-page-active')
+      document.documentElement.classList.remove('intel-page-active')
+      html.style.cssText = ''
+      body.style.cssText = ''
+      if (root) root.style.cssText = ''
+    }
+  }, [])
+}
 
 // Document data with hidden clues
 const DOCUMENTS = [
@@ -615,6 +644,9 @@ Read unit call signs in order: E-V-A-C-_-P-R-O-T-O-C-O-L
 function IntelDocuments() {
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showAnswers, setShowAnswers] = useState(false)
+  
+  // Enable scrolling on this page
+  useEnableScroll()
 
   const handlePrint = () => {
     window.print()

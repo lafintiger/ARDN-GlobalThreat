@@ -47,6 +47,15 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* Allow scrolling on intel documents page */
+html.intel-page-active,
+html.intel-page-active body,
+html.intel-page-active #root {
+  height: auto !important;
+  overflow: auto !important;
+  overflow-x: hidden !important;
+}
+
 body {
   font-family: var(--font-ui);
   background: var(--bg-primary);

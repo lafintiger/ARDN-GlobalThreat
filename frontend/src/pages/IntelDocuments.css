@@ -1,10 +1,21 @@
 /* Intel Documents - Classified Document Styling */
 
+/* Override global overflow:hidden to enable scrolling on this page */
+html:has(.intel-page),
+html:has(.intel-page) body,
+html:has(.intel-page) #root {
+  height: auto !important;
+  overflow: auto !important;
+  overflow-x: hidden !important;
+}
+
 .intel-page {
   background: #1a1a2e;
   min-height: 100vh;
   padding: 20px;
+  padding-bottom: 100px;
   font-family: 'Courier New', Courier, monospace;
+  overflow: visible !important;
 }
 
 /* Header */
