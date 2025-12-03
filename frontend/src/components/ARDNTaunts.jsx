@@ -111,10 +111,14 @@ function ARDNTaunts({
   useEffect(() => {
     const checkTTS = async () => {
       try {
+        console.log('[TTS] Checking availability at:', `${API_BASE}/api/tts/status`)
         const res = await fetch(`${API_BASE}/api/tts/status`)
         const data = await res.json()
+        console.log('[TTS] Status response:', data)
         setTtsAvailable(data.available && data.enabled)
+        console.log('[TTS] Available:', data.available && data.enabled)
       } catch (e) {
+        console.log('[TTS] Check failed:', e)
         setTtsAvailable(false)
       }
     }
@@ -123,17 +127,24 @@ function ARDNTaunts({
   
   // Speak taunt using TTS
   const speakTaunt = useCallback(async (text) => {
-    if (!voiceEnabled || !ttsAvailable || !text) return
+    console.log('[TTS] speakTaunt called:', { text, voiceEnabled, ttsAvailable })
+    if (!voiceEnabled || !ttsAvailable || !text) {
+      console.log('[TTS] Skipping - conditions not met')
+      return
+    }
     
     try {
+      console.log('[TTS] Synthesizing:', text)
       const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       })
       
+      console.log('[TTS] Response status:', res.status)
       if (res.ok) {
         const audioBlob = await res.blob()
+        console.log('[TTS] Got audio blob:', audioBlob.size, 'bytes')
         const audioUrl = URL.createObjectURL(audioBlob)
         
         // Stop any currently playing audio
@@ -145,6 +156,7 @@ function ARDNTaunts({
         const audio = new Audio(audioUrl)
         audioRef.current = audio
         audio.volume = 0.9
+        console.log('[TTS] Playing audio...')
         audio.play().catch(e => console.log('[TTS] Playback blocked:', e))
       }
     } catch (e) {
@@ -172,6 +184,7 @@ function ARDNTaunts({
   const showTaunt = useCallback((text, priority = false) => {
     if (!text) return
     
+    console.log('[TAUNT] Showing taunt:', text, 'priority:', priority)
     if (priority || !currentTaunt) {
       setCurrentTaunt(text)
       // Speak the taunt!
