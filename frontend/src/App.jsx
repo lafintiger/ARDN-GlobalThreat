@@ -483,6 +483,7 @@ function App() {
         gameActive={gameState?.game_active || false}
         lastEvent={lastEvent}
         etaSeconds={gameState?.eta_collapse_seconds || 0}
+        voiceEnabled={soundEnabled}
       />
       
       {/* Game End Screen */}

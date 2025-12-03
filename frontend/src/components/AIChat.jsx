@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { WS_CHAT, API_BASE } from '../config'
+import { WS_CHAT } from '../config'
 import './AIChat.css'
 
 function AIChat() {
@@ -13,74 +13,9 @@ function AIChat() {
   const [inputValue, setInputValue] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
-  const [voiceEnabled, setVoiceEnabled] = useState(true)
-  const [voiceAvailable, setVoiceAvailable] = useState(false)
   const messagesEndRef = useRef(null)
   const wsRef = useRef(null)
   const streamingContentRef = useRef('')
-  const audioRef = useRef(null)
-  
-  // Check TTS availability on mount
-  useEffect(() => {
-    const checkTTS = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/tts/status`)
-        const data = await res.json()
-        setVoiceAvailable(data.available)
-        setVoiceEnabled(data.enabled)
-      } catch (e) {
-        console.log('[TTS] Service not available')
-        setVoiceAvailable(false)
-      }
-    }
-    checkTTS()
-  }, [])
-  
-  // Play ARDN's voice
-  const speakText = useCallback(async (text) => {
-    if (!voiceEnabled || !voiceAvailable) return
-    
-    try {
-      const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-      })
-      
-      if (res.ok) {
-        const audioBlob = await res.blob()
-        const audioUrl = URL.createObjectURL(audioBlob)
-        
-        // Stop any currently playing audio
-        if (audioRef.current) {
-          audioRef.current.pause()
-          URL.revokeObjectURL(audioRef.current.src)
-        }
-        
-        const audio = new Audio(audioUrl)
-        audioRef.current = audio
-        audio.volume = 0.8
-        audio.play().catch(e => console.log('[TTS] Playback blocked:', e))
-      }
-    } catch (e) {
-      console.log('[TTS] Synthesis error:', e)
-    }
-  }, [voiceEnabled, voiceAvailable])
-  
-  // Toggle voice
-  const toggleVoice = async () => {
-    const newState = !voiceEnabled
-    setVoiceEnabled(newState)
-    try {
-      await fetch(`${API_BASE}/api/tts/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: newState })
-      })
-    } catch (e) {
-      console.log('[TTS] Config error:', e)
-    }
-  }
   
   useEffect(() => {
     const connect = () => {
@@ -108,9 +43,6 @@ function AIChat() {
                 ...prev,
                 { role: 'assistant', content: finalContent }
               ])
-              
-              // Speak the response
-              speakText(finalContent)
             }
             
             // Then clear streaming state
@@ -135,9 +67,7 @@ function AIChat() {
         wsRef.current.close()
       }
     }
-  }, [speakText])
-  
-  // Note: message updates now handled directly in websocket handler
+  }, [])
   
   // Auto-scroll
   useEffect(() => {
@@ -190,24 +120,13 @@ function AIChat() {
             <span className="chat-subtitle">DIRECT INTERFACE</span>
           </div>
         </div>
-        <div className="chat-controls">
-          {voiceAvailable && (
-            <button 
-              className={`voice-toggle ${voiceEnabled ? 'active' : ''}`}
-              onClick={toggleVoice}
-              title={voiceEnabled ? 'Disable Voice' : 'Enable Voice'}
-            >
-              {voiceEnabled ? '🔊' : '🔇'}
-            </button>
-          )}
-          <div className="chat-status">
-            <motion.span 
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              {isStreaming ? 'PROCESSING...' : 'AWAITING INPUT'}
-            </motion.span>
-          </div>
+        <div className="chat-status">
+          <motion.span 
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            {isStreaming ? 'PROCESSING...' : 'AWAITING INPUT'}
+          </motion.span>
         </div>
       </div>
       
@@ -286,4 +205,3 @@ function AIChat() {
 }
 
 export default AIChat
-

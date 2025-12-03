@@ -1,10 +1,12 @@
 /**
  * ARDN Taunts - Auto-generated messages from the AI during gameplay
  * Adds atmosphere and psychological pressure
+ * Now with TTS voice!
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { API_BASE } from '../config'
 import './ARDNTaunts.css'
 
 // Taunt categories based on game state
@@ -97,10 +99,58 @@ function ARDNTaunts({
   threatLevel = 0, 
   gameActive = false,
   lastEvent = null,  // { type: 'mission_complete' | 'mission_failed' | 'sector_secured' | etc }
-  etaSeconds = 0
+  etaSeconds = 0,
+  voiceEnabled = true
 }) {
   const [currentTaunt, setCurrentTaunt] = useState(null)
   const [tauntQueue, setTauntQueue] = useState([])
+  const [ttsAvailable, setTtsAvailable] = useState(false)
+  const audioRef = useRef(null)
+  
+  // Check TTS availability on mount
+  useEffect(() => {
+    const checkTTS = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/tts/status`)
+        const data = await res.json()
+        setTtsAvailable(data.available && data.enabled)
+      } catch (e) {
+        setTtsAvailable(false)
+      }
+    }
+    checkTTS()
+  }, [])
+  
+  // Speak taunt using TTS
+  const speakTaunt = useCallback(async (text) => {
+    if (!voiceEnabled || !ttsAvailable || !text) return
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      })
+      
+      if (res.ok) {
+        const audioBlob = await res.blob()
+        const audioUrl = URL.createObjectURL(audioBlob)
+        
+        // Stop any currently playing audio
+        if (audioRef.current) {
+          audioRef.current.pause()
+          URL.revokeObjectURL(audioRef.current.src)
+        }
+        
+        const audio = new Audio(audioUrl)
+        audioRef.current = audio
+        audio.volume = 0.9
+        audio.play().catch(e => console.log('[TTS] Playback blocked:', e))
+      }
+    } catch (e) {
+      console.log('[TTS] Taunt synthesis error:', e)
+    }
+  }, [voiceEnabled, ttsAvailable])
 
   // Get appropriate taunt category based on threat level
   const getTauntCategory = useCallback(() => {
@@ -124,6 +174,8 @@ function ARDNTaunts({
     
     if (priority || !currentTaunt) {
       setCurrentTaunt(text)
+      // Speak the taunt!
+      speakTaunt(text)
       // Auto-hide after delay
       setTimeout(() => {
         setCurrentTaunt(null)
@@ -132,7 +184,7 @@ function ARDNTaunts({
       // Queue it
       setTauntQueue(prev => [...prev, text])
     }
-  }, [currentTaunt])
+  }, [currentTaunt, speakTaunt])
 
   // Process queue when current taunt clears
   useEffect(() => {
