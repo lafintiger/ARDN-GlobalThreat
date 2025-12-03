@@ -432,3 +432,4 @@ class ChallengeManager:
 # Global challenge manager
 challenge_manager = ChallengeManager()
 
+

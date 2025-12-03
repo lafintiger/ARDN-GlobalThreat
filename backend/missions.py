@@ -265,3 +265,4 @@ class MissionManager:
 # Global mission manager instance
 mission_manager = MissionManager()
 
+

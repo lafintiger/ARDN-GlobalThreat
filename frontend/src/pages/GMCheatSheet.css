@@ -31,6 +31,27 @@
   background: #0055aa;
 }
 
+/* AI Guide Link */
+.ai-guide-link {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #6b21a8;
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 100;
+  transition: background 0.2s;
+}
+
+.ai-guide-link:hover {
+  background: #581c87;
+}
+
 /* Header */
 .cheat-header {
   text-align: center;
@@ -249,4 +270,5 @@
 @page {
   margin: 0.5in;
 }
+
 

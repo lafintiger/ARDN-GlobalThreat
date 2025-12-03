@@ -72,3 +72,4 @@ volumes:
   ollama-data:
     driver: local
 
+

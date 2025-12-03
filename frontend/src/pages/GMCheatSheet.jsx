@@ -44,6 +44,11 @@ function GMCheatSheet() {
         🖨️ PRINT THIS PAGE
       </button>
 
+      {/* AI Chat Guide Link */}
+      <a href="/ai-chat-guide" className="ai-guide-link no-print">
+        🤖 AI Chat Guide →
+      </a>
+
       {/* Header */}
       <header className="cheat-header">
         <h1>🎮 A.R.D.N. GAME MASTER CHEAT SHEET</h1>
@@ -234,4 +239,5 @@ function GMCheatSheet() {
 }
 
 export default GMCheatSheet
+
 

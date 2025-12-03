@@ -219,3 +219,4 @@ function getRating(stats, victory) {
 
 export default GameEndScreen
 
+
