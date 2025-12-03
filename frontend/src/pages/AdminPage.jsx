@@ -12,6 +12,31 @@ function AdminPage() {
   const [sessionMinutes, setSessionMinutes] = useState(60)
   const [notification, setNotification] = useState(null)
 
+  // Override global overflow:hidden for this page
+  useEffect(() => {
+    document.body.style.overflow = 'auto'
+    document.body.style.height = 'auto'
+    document.documentElement.style.overflow = 'auto'
+    document.documentElement.style.height = 'auto'
+    const root = document.getElementById('root')
+    if (root) {
+      root.style.overflow = 'auto'
+      root.style.height = 'auto'
+    }
+    
+    return () => {
+      // Reset when leaving admin page
+      document.body.style.overflow = ''
+      document.body.style.height = ''
+      document.documentElement.style.overflow = ''
+      document.documentElement.style.height = ''
+      if (root) {
+        root.style.overflow = ''
+        root.style.height = ''
+      }
+    }
+  }, [])
+
   // Fetch game state
   useEffect(() => {
     const fetchState = async () => {
