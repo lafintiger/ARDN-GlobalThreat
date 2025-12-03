@@ -16,6 +16,7 @@ import struct
 class TTSService:
     def __init__(self):
         self.enabled = True
+        self.voice_model = "system-default"  # Will be updated if Piper is used
         self._initialized = False
         self._engine = None
         self._engine_type = None  # 'pyttsx3' or 'piper'
@@ -37,6 +38,7 @@ class TTSService:
                 self._piper_voice = PiperVoice.load(str(model_file), str(config_file))
                 self._engine_type = 'piper'
                 self._engine = True
+                self.voice_model = "en_US-ryan-high"
                 print("[TTS] Initialized with Piper (high quality neural voice)")
                 self._initialized = True
                 return True
