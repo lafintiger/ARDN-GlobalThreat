@@ -53,21 +53,21 @@
 
 .chat-title h3 {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: var(--red);
   letter-spacing: 3px;
 }
 
 .chat-subtitle {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   color: var(--text-dim);
   letter-spacing: 2px;
 }
 
 .chat-status {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.85rem;
   color: var(--cyan);
   letter-spacing: 1px;
 }
@@ -135,9 +135,9 @@
 .message-label {
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   letter-spacing: 1px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .message.assistant .message-label {
@@ -149,8 +149,8 @@
 }
 
 .message-content p {
-  font-size: 0.85rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--text-primary);
 }
 
@@ -193,7 +193,7 @@
   outline: none;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 1rem;
   padding: var(--spacing-sm);
 }
 
@@ -209,7 +209,7 @@
   color: #000;
   font-family: var(--font-ui);
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.2s;

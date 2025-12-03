@@ -3,11 +3,11 @@
   background: var(--bg-secondary);
   border: 1px solid var(--text-dim);
   border-radius: 8px;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   cursor: pointer;
   transition: all 0.2s ease;
   overflow: hidden;
-  min-height: 120px;
+  min-height: 140px;
 }
 
 .domain-card::before {
@@ -51,15 +51,15 @@
 }
 
 .domain-icon {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
 }
 
 .domain-status {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--status-color);
-  padding: 4px 10px;
+  padding: 5px 12px;
   border: 1px solid var(--status-color);
   border-radius: 4px;
   letter-spacing: 1px;
@@ -68,7 +68,7 @@
 
 .domain-name {
   font-family: var(--font-ui);
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: var(--spacing-sm);
@@ -109,15 +109,15 @@
 .progress-labels {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
+  margin-top: 8px;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--text-dim);
 }
 
 .progress-value {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
 }
 
 .activity-indicator {
@@ -125,9 +125,9 @@
   align-items: center;
   gap: var(--spacing-xs);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
-  margin-top: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
 }
 
 .activity-dots {

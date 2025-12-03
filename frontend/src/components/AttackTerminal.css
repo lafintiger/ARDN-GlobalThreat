@@ -20,13 +20,13 @@
   align-items: center;
   gap: var(--spacing-sm);
   color: var(--red);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 2px;
 }
 
 .terminal-icon {
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   animation: pulse-icon 1s infinite;
 }
 
@@ -57,7 +57,7 @@
 }
 
 .terminal-status {
-  font-size: 0.65rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
   letter-spacing: 1px;
 }
@@ -73,8 +73,8 @@
 }
 
 .terminal-content {
-  font-size: 0.75rem;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  line-height: 1.7;
   color: var(--text-primary);
 }
 
@@ -102,7 +102,7 @@
 
 .terminal-line.hash {
   color: var(--purple);
-  font-size: 0.7rem;
+  font-size: 0.9rem;
 }
 
 .terminal-line.password {
@@ -131,7 +131,7 @@
 }
 
 .footer-text {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   color: var(--text-dim);
   letter-spacing: 2px;
 }
