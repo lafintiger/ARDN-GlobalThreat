@@ -1,0 +1,152 @@
+.attack-terminal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0d0d12;
+  font-family: var(--font-mono);
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(90deg, rgba(255, 42, 42, 0.2) 0%, transparent 50%, rgba(0, 240, 255, 0.2) 100%);
+  border-bottom: 1px solid var(--text-dim);
+}
+
+.terminal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--red);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.terminal-icon {
+  font-size: 0.7rem;
+  animation: pulse-icon 1s infinite;
+}
+
+@keyframes pulse-icon {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.terminal-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.connection-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connection-indicator.connected {
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+}
+
+.connection-indicator.disconnected {
+  background: var(--red);
+}
+
+.terminal-status {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.terminal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  background: 
+    linear-gradient(rgba(0, 240, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.terminal-content {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.terminal-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminal-line.success {
+  color: var(--green);
+}
+
+.terminal-line.info {
+  color: var(--cyan);
+}
+
+.terminal-line.error {
+  color: var(--red);
+}
+
+.terminal-line.command {
+  color: var(--yellow);
+  font-weight: 600;
+}
+
+.terminal-line.hash {
+  color: var(--purple);
+  font-size: 0.7rem;
+}
+
+.terminal-line.password {
+  color: var(--green);
+  background: rgba(57, 255, 20, 0.1);
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.terminal-line.separator {
+  color: var(--cyan-dim);
+  opacity: 0.5;
+}
+
+.cursor {
+  color: var(--cyan);
+  font-weight: bold;
+}
+
+.terminal-footer {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--bg-primary);
+  border-top: 1px solid var(--text-dim);
+  text-align: center;
+}
+
+.footer-text {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+
+/* Scrollbar for terminal */
+.terminal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.terminal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.terminal-body::-webkit-scrollbar-thumb {
+  background: var(--cyan-dim);
+  border-radius: 3px;
+}
+

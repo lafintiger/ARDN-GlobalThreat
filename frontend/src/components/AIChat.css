@@ -1,0 +1,227 @@
+.ai-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-secondary);
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: linear-gradient(90deg, rgba(255, 42, 42, 0.1) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(255, 42, 42, 0.3);
+}
+
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.ardn-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 2px solid var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-eye {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--red), #660000);
+  position: relative;
+}
+
+.mini-eye::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background: #000;
+  border-radius: 50%;
+}
+
+.chat-title h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--red);
+  letter-spacing: 3px;
+}
+
+.chat-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+
+.chat-status {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--cyan);
+  letter-spacing: 1px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.message {
+  display: flex;
+  gap: var(--spacing-sm);
+  max-width: 90%;
+}
+
+.message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.message.assistant {
+  align-self: flex-start;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 1px solid var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tiny-eye {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.message-content {
+  background: var(--bg-tertiary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 8px;
+  border: 1px solid var(--text-dim);
+}
+
+.message.assistant .message-content {
+  border-color: rgba(255, 42, 42, 0.3);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(255, 42, 42, 0.05) 100%);
+}
+
+.message.user .message-content {
+  border-color: rgba(0, 240, 255, 0.3);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(0, 240, 255, 0.05) 100%);
+}
+
+.message-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.message.assistant .message-label {
+  color: var(--red);
+}
+
+.message.user .message-label {
+  color: var(--cyan);
+}
+
+.message-content p {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.typing-cursor {
+  color: var(--red);
+  margin-left: 2px;
+}
+
+.chat-input-form {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--text-dim);
+  background: var(--bg-primary);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--cyan-dim);
+  border-radius: 4px;
+  padding: var(--spacing-xs);
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.input-prefix {
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  padding-left: var(--spacing-sm);
+}
+
+.input-wrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: var(--spacing-sm);
+}
+
+.input-wrapper input::placeholder {
+  color: var(--text-dim);
+}
+
+.input-wrapper button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--cyan);
+  border: none;
+  border-radius: 2px;
+  color: #000;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.input-wrapper button:hover:not(:disabled) {
+  background: var(--cyan);
+  box-shadow: 0 0 15px var(--cyan);
+}
+
+.input-wrapper button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

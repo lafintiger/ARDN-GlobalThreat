@@ -1,0 +1,261 @@
+"""
+Game state management for A.R.D.N. escape room experience.
+Handles domain compromise levels, passwords, and game progression.
+"""
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Callable
+import asyncio
+import random
+
+@dataclass
+class Domain:
+    id: str
+    name: str
+    icon: str
+    description: str
+    compromise_percent: float = 0.0
+    status: str = "SCANNING"  # SCANNING, ATTACKING, COMPROMISED, SECURED
+    attack_speed: float = 1.0  # Multiplier for attack progression
+    is_active: bool = True
+
+@dataclass 
+class Password:
+    code: str
+    domain_id: Optional[str]  # None = affects all domains
+    reduction_percent: float  # How much to reduce compromise
+    one_time: bool = True
+    used: bool = False
+    hint: str = ""
+
+class GameState:
+    def __init__(self):
+        self.domains: Dict[str, Domain] = self._init_domains()
+        self.passwords: Dict[str, Password] = {}
+        self.global_threat_level: float = 0.0
+        self.game_active: bool = False
+        self.countdown_seconds: int = 3600  # 60 minutes default
+        self.on_update_callbacks: List[Callable] = []
+        self._attack_task: Optional[asyncio.Task] = None
+        
+        # Initialize default passwords
+        self._init_default_passwords()
+    
+    def _init_domains(self) -> Dict[str, Domain]:
+        """Initialize all critical infrastructure domains."""
+        domains_data = [
+            ("financial", "Financial Systems", "💰", "Banking, stock markets, payment processing"),
+            ("telecom", "Telecommunications", "📡", "Cell networks, internet backbone, satellites"),
+            ("power", "Power Grid", "⚡", "Electrical infrastructure, nuclear plants"),
+            ("water", "Water Systems", "💧", "Treatment plants, distribution networks"),
+            ("transport", "Transportation", "🚆", "Air traffic, rail systems, traffic control"),
+            ("healthcare", "Healthcare", "🏥", "Hospitals, medical devices, pharma supply"),
+            ("government", "Government/Military", "🛡️", "Defense networks, intelligence agencies"),
+            ("emergency", "Emergency Services", "🚨", "911 dispatch, first responders"),
+            ("satellite", "Satellite/Space", "🛰️", "GPS, weather, communications satellites"),
+            ("supply", "Supply Chain", "📦", "Shipping, logistics, port systems"),
+            ("media", "Media/Broadcast", "📺", "News networks, social media, broadcasting"),
+            ("nuclear", "Nuclear Systems", "☢️", "Reactor controls, enrichment facilities"),
+        ]
+        
+        domains = {}
+        for id, name, icon, desc in domains_data:
+            domains[id] = Domain(
+                id=id,
+                name=name, 
+                icon=icon,
+                description=desc,
+                compromise_percent=random.uniform(5, 25),  # Start with some compromise
+                attack_speed=random.uniform(0.5, 1.5)
+            )
+        return domains
+    
+    def _init_default_passwords(self):
+        """Initialize some default passwords for testing."""
+        default_passwords = [
+            Password("FIREWALL_ALPHA", "financial", 15.0, True, False, "Check the firewall logs"),
+            Password("GRID_SECURE_7", "power", 20.0, True, False, "Power station access code"),
+            Password("MEDIC_OVERRIDE", "healthcare", 15.0, True, False, "Hospital emergency protocol"),
+            Password("ORBITAL_DECAY", "satellite", 25.0, True, False, "Satellite command sequence"),
+            Password("GLOBAL_RESET", None, 10.0, True, False, "Affects all systems"),
+            Password("BACKDOOR_EXIT", None, 5.0, False, False, "Reusable emergency code"),
+        ]
+        for pw in default_passwords:
+            self.passwords[pw.code.upper()] = pw
+    
+    def add_password(self, code: str, domain_id: Optional[str], reduction: float, 
+                     one_time: bool = True, hint: str = "") -> bool:
+        """Add a new password to the system."""
+        code = code.upper().strip()
+        if code in self.passwords:
+            return False
+        self.passwords[code] = Password(code, domain_id, reduction, one_time, False, hint)
+        return True
+    
+    def remove_password(self, code: str) -> bool:
+        """Remove a password from the system."""
+        code = code.upper().strip()
+        if code in self.passwords:
+            del self.passwords[code]
+            return True
+        return False
+    
+    def try_password(self, code: str) -> dict:
+        """
+        Attempt to use a password to reduce compromise.
+        Returns result dict with success status and message.
+        """
+        code = code.upper().strip()
+        
+        if code not in self.passwords:
+            return {
+                "success": False,
+                "message": "ACCESS DENIED - Invalid security code",
+                "reduction": 0,
+                "affected_domains": []
+            }
+        
+        password = self.passwords[code]
+        
+        if password.used and password.one_time:
+            return {
+                "success": False, 
+                "message": "ACCESS DENIED - Security code already utilized",
+                "reduction": 0,
+                "affected_domains": []
+            }
+        
+        # Apply the reduction
+        affected = []
+        if password.domain_id:
+            # Single domain
+            if password.domain_id in self.domains:
+                domain = self.domains[password.domain_id]
+                old_percent = domain.compromise_percent
+                domain.compromise_percent = max(0, domain.compromise_percent - password.reduction_percent)
+                affected.append({
+                    "id": domain.id,
+                    "name": domain.name,
+                    "old_percent": old_percent,
+                    "new_percent": domain.compromise_percent
+                })
+        else:
+            # All domains
+            for domain in self.domains.values():
+                old_percent = domain.compromise_percent
+                domain.compromise_percent = max(0, domain.compromise_percent - password.reduction_percent)
+                affected.append({
+                    "id": domain.id,
+                    "name": domain.name,
+                    "old_percent": old_percent,
+                    "new_percent": domain.compromise_percent
+                })
+        
+        password.used = True
+        self._update_global_threat()
+        
+        return {
+            "success": True,
+            "message": f"COUNTERMEASURE DEPLOYED - {password.reduction_percent}% reduction applied",
+            "reduction": password.reduction_percent,
+            "affected_domains": affected
+        }
+    
+    def set_domain_compromise(self, domain_id: str, percent: float) -> bool:
+        """Directly set a domain's compromise percentage (for game master)."""
+        if domain_id in self.domains:
+            self.domains[domain_id].compromise_percent = max(0, min(100, percent))
+            self._update_global_threat()
+            return True
+        return False
+    
+    def _update_global_threat(self):
+        """Recalculate global threat level based on all domains."""
+        if not self.domains:
+            self.global_threat_level = 0
+            return
+        total = sum(d.compromise_percent for d in self.domains.values())
+        self.global_threat_level = total / len(self.domains)
+    
+    def get_state(self) -> dict:
+        """Get the full game state as a dictionary."""
+        self._update_global_threat()
+        return {
+            "domains": {
+                id: {
+                    "id": d.id,
+                    "name": d.name,
+                    "icon": d.icon,
+                    "description": d.description,
+                    "compromise_percent": round(d.compromise_percent, 1),
+                    "status": self._get_domain_status(d),
+                    "is_active": d.is_active
+                }
+                for id, d in self.domains.items()
+            },
+            "global_threat_level": round(self.global_threat_level, 1),
+            "game_active": self.game_active,
+            "countdown_seconds": self.countdown_seconds
+        }
+    
+    def _get_domain_status(self, domain: Domain) -> str:
+        """Determine domain status based on compromise level."""
+        if domain.compromise_percent >= 100:
+            return "COMPROMISED"
+        elif domain.compromise_percent >= 75:
+            return "CRITICAL"
+        elif domain.compromise_percent >= 50:
+            return "ATTACKING"
+        elif domain.compromise_percent >= 25:
+            return "BREACHING"
+        else:
+            return "SCANNING"
+    
+    async def start_attack_simulation(self):
+        """Start the automatic attack progression."""
+        self.game_active = True
+        self._attack_task = asyncio.create_task(self._attack_loop())
+    
+    async def stop_attack_simulation(self):
+        """Stop the automatic attack progression."""
+        self.game_active = False
+        if self._attack_task:
+            self._attack_task.cancel()
+            try:
+                await self._attack_task
+            except asyncio.CancelledError:
+                pass
+    
+    async def _attack_loop(self):
+        """Main attack progression loop."""
+        while self.game_active:
+            for domain in self.domains.values():
+                if domain.is_active and domain.compromise_percent < 100:
+                    # Random progression based on attack speed
+                    increment = random.uniform(0.1, 0.5) * domain.attack_speed
+                    domain.compromise_percent = min(100, domain.compromise_percent + increment)
+            
+            self._update_global_threat()
+            
+            # Notify callbacks
+            for callback in self.on_update_callbacks:
+                try:
+                    await callback(self.get_state())
+                except Exception:
+                    pass
+            
+            await asyncio.sleep(2)  # Update every 2 seconds
+    
+    def reset(self):
+        """Reset the game to initial state."""
+        self.domains = self._init_domains()
+        self.global_threat_level = 0.0
+        self.countdown_seconds = 3600
+        # Reset password usage
+        for pw in self.passwords.values():
+            pw.used = False
+
+
+# Global game state instance
+game_state = GameState()
+
