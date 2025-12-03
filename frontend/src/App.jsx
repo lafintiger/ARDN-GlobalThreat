@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DomainCard from './components/DomainCard'
 import AttackTerminal from './components/AttackTerminal'
@@ -6,7 +6,12 @@ import AIChat from './components/AIChat'
 import PasswordEntry from './components/PasswordEntry'
 import GlobalStatus from './components/GlobalStatus'
 import WorldMap from './components/WorldMap'
+import ARDNTaunts from './components/ARDNTaunts'
+import AtmosphereEffects from './components/AtmosphereEffects'
+import GameEndScreen from './components/GameEndScreen'
+import SoundControl from './components/SoundControl'
 import { useWebSocket } from './hooks/useWebSocket'
+import { useSoundSystem } from './hooks/useSoundSystem'
 
 function App() {
   const [gameState, setGameState] = useState(null)
@@ -14,8 +19,35 @@ function App() {
   const [passwordResult, setPasswordResult] = useState(null)
   const [showAdmin, setShowAdmin] = useState(false)
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'map'
+  const [lastEvent, setLastEvent] = useState(null)
+  const [showGameEnd, setShowGameEnd] = useState(false)
+  const [gameEndVictory, setGameEndVictory] = useState(false)
+  const [gameStats, setGameStats] = useState(null)
+  const prevThreatLevel = useRef(0)
   
   const { sendMessage, lastMessage, connectionStatus } = useWebSocket('ws://localhost:8333/ws/state')
+  
+  // Sound system
+  const {
+    isEnabled: soundEnabled,
+    volume,
+    toggleSound,
+    setMasterVolume,
+    playAmbient,
+    stopAmbient,
+    playAlarm,
+    stopAlarm,
+    playHeartbeat,
+    stopHeartbeat,
+    playCritical,
+    playSuccess,
+    playFailure,
+    playSecure,
+    playGlitch,
+    playCountdown,
+    stopAll,
+    initSound
+  } = useSoundSystem()
   
   useEffect(() => {
     if (lastMessage) {
@@ -23,10 +55,114 @@ function App() {
         setGameState(lastMessage.data)
       } else if (lastMessage.type === 'password_result') {
         setPasswordResult(lastMessage.data)
+        if (lastMessage.data.success) {
+          playSuccess()
+          setLastEvent({ type: 'password_correct' })
+        } else {
+          playFailure()
+          setLastEvent({ type: 'password_wrong' })
+        }
         setTimeout(() => setPasswordResult(null), 5000)
+      } else if (lastMessage.type === 'mission_complete') {
+        playSuccess()
+        setLastEvent({ type: 'mission_complete', data: lastMessage.data })
+      } else if (lastMessage.type === 'mission_failed') {
+        playFailure()
+        setLastEvent({ type: 'mission_failed', data: lastMessage.data })
       }
     }
-  }, [lastMessage])
+  }, [lastMessage, playSuccess, playFailure])
+  
+  // Sound effects based on threat level
+  useEffect(() => {
+    if (!gameState) return
+    
+    const threat = gameState.global_threat_level
+    const wasActive = prevThreatLevel.current > 0
+    const isActive = gameState.game_active
+    
+    // Start/stop ambient based on game state
+    if (isActive && !wasActive) {
+      playAmbient()
+    } else if (!isActive && wasActive) {
+      stopAll()
+    }
+    
+    // Alarm at high threat
+    if (threat >= 75 && prevThreatLevel.current < 75 && isActive) {
+      playAlarm()
+      playCritical()
+    } else if (threat < 70) {
+      stopAlarm()
+    }
+    
+    // Heartbeat when time is low
+    const eta = gameState.eta_collapse_seconds || 0
+    if (eta > 0 && eta <= 300 && isActive) {
+      playHeartbeat()
+    } else if (eta > 300 || !isActive) {
+      stopHeartbeat()
+    }
+    
+    // Countdown beeps in final minute
+    if (eta <= 60 && eta > 0 && eta % 10 === 0 && isActive) {
+      playCountdown()
+    }
+    
+    // Check for sector status changes
+    if (gameState.domains && prevThreatLevel.current > 0) {
+      const securedCount = Object.values(gameState.domains).filter(d => d.is_secured).length
+      const compromisedCount = Object.values(gameState.domains).filter(d => d.compromise_percent >= 100).length
+      
+      // Detect new secured sector
+      if (securedCount > 0) {
+        // Could track previous count, but for now just let mission events handle it
+      }
+      
+      // Random glitch sounds at higher threat
+      if (threat >= 50 && Math.random() < 0.1) {
+        playGlitch()
+      }
+    }
+    
+    // Game end detection
+    if (isActive) {
+      const allSecured = Object.values(gameState.domains).every(d => d.is_secured)
+      const allCompromised = Object.values(gameState.domains).every(d => d.compromise_percent >= 100)
+      
+      if (allSecured) {
+        // Victory!
+        setGameEndVictory(true)
+        setGameStats({
+          sectorsSecured: 12,
+          totalSectors: 12,
+          missionsCompleted: 0, // Would need to track this
+          totalMissions: 12,
+          timeElapsed: gameState.elapsed_seconds || 0,
+          finalThreatLevel: threat,
+          passwordsUsed: 0
+        })
+        setShowGameEnd(true)
+        stopAll()
+      } else if (allCompromised || (eta <= 0 && threat >= 100)) {
+        // Defeat
+        setGameEndVictory(false)
+        setGameStats({
+          sectorsSecured: Object.values(gameState.domains).filter(d => d.is_secured).length,
+          totalSectors: 12,
+          missionsCompleted: 0,
+          totalMissions: 12,
+          timeElapsed: gameState.elapsed_seconds || 0,
+          finalThreatLevel: threat,
+          passwordsUsed: 0
+        })
+        setShowGameEnd(true)
+        stopAll()
+      }
+    }
+    
+    prevThreatLevel.current = threat
+  }, [gameState, playAmbient, stopAll, playAlarm, stopAlarm, playHeartbeat, stopHeartbeat, playCritical, playCountdown, playGlitch])
   
   // Fetch initial state
   useEffect(() => {
@@ -125,6 +261,13 @@ function App() {
         />
         
         <div className="header-right">
+          <SoundControl 
+            isEnabled={soundEnabled}
+            volume={volume}
+            onToggle={toggleSound}
+            onVolumeChange={setMasterVolume}
+            onInitialize={initSound}
+          />
           <div className={`connection-status ${connectionStatus}`}>
             <span className="status-dot" />
             {connectionStatus.toUpperCase()}
@@ -308,6 +451,32 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Atmosphere Effects */}
+      <AtmosphereEffects 
+        threatLevel={gameState?.global_threat_level || 0}
+        gameActive={gameState?.game_active || false}
+        etaSeconds={gameState?.eta_collapse_seconds || 0}
+      />
+      
+      {/* ARDN Taunts */}
+      <ARDNTaunts 
+        threatLevel={gameState?.global_threat_level || 0}
+        gameActive={gameState?.game_active || false}
+        lastEvent={lastEvent}
+        etaSeconds={gameState?.eta_collapse_seconds || 0}
+      />
+      
+      {/* Game End Screen */}
+      <GameEndScreen 
+        show={showGameEnd}
+        victory={gameEndVictory}
+        stats={gameStats}
+        onClose={() => {
+          setShowGameEnd(false)
+          resetGame()
+        }}
+      />
     </div>
   )
 }
