@@ -80,20 +80,31 @@ function App() {
     }
   }, [lastMessage, playSuccess, playFailure])
   
+  // Track previous game active state
+  const prevGameActive = useRef(false)
+  
   // Sound effects based on threat level
   useEffect(() => {
     if (!gameState) return
     
     const threat = gameState.global_threat_level
-    const wasActive = prevThreatLevel.current > 0
+    const wasActive = prevGameActive.current
     const isActive = gameState.game_active
     
     // Start/stop ambient based on game state
     if (isActive && !wasActive) {
+      // Game just started - play ambient
       playAmbient()
     } else if (!isActive && wasActive) {
+      // Game stopped
       stopAll()
+    } else if (isActive && wasActive) {
+      // Game is running - ensure ambient is playing
+      playAmbient()
     }
+    
+    // Update previous state
+    prevGameActive.current = isActive
     
     // Alarm at high threat
     if (threat >= 75 && prevThreatLevel.current < 75 && isActive) {

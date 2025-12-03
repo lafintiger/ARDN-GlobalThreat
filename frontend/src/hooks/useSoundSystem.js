@@ -29,7 +29,13 @@ class SoundGenerator {
   }
 
   init() {
-    if (this.isInitialized) return
+    if (this.isInitialized) {
+      // If already initialized but suspended, resume
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        this.audioContext.resume()
+      }
+      return
+    }
     
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
@@ -37,6 +43,13 @@ class SoundGenerator {
       this.masterGain.connect(this.audioContext.destination)
       this.masterGain.gain.value = 0.3
       this.isInitialized = true
+      
+      // Resume if suspended (required by browsers)
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume()
+      }
+      
+      console.log('Sound system initialized')
     } catch (e) {
       console.warn('Web Audio API not supported:', e)
     }
@@ -353,6 +366,32 @@ export function useSoundSystem() {
     if (!initialized.current) {
       soundGenerator.init()
       initialized.current = true
+    } else {
+      // Resume if already initialized but suspended
+      soundGenerator.init()
+    }
+  }, [])
+
+  // Auto-initialize on first user interaction (required by browsers)
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (!initialized.current) {
+        soundGenerator.init()
+        initialized.current = true
+      } else if (soundGenerator.audioContext?.state === 'suspended') {
+        soundGenerator.audioContext.resume()
+      }
+    }
+
+    // Listen for any user interaction
+    document.addEventListener('click', handleUserInteraction, { once: false })
+    document.addEventListener('keydown', handleUserInteraction, { once: false })
+    document.addEventListener('touchstart', handleUserInteraction, { once: false })
+
+    return () => {
+      document.removeEventListener('click', handleUserInteraction)
+      document.removeEventListener('keydown', handleUserInteraction)
+      document.removeEventListener('touchstart', handleUserInteraction)
     }
   }, [])
 
