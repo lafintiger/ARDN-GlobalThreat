@@ -43,6 +43,43 @@
   color: var(--cyan);
 }
 
+/* Voice/TTS toggle */
+.voice-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--red-dim, #662222);
+  background: rgba(255, 42, 42, 0.1);
+  color: var(--red, #ff2a2a);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  padding: 8px;
+}
+
+.voice-toggle svg {
+  width: 100%;
+  height: 100%;
+}
+
+.voice-toggle:hover {
+  background: rgba(255, 42, 42, 0.2);
+  box-shadow: 0 0 15px rgba(255, 42, 42, 0.3);
+}
+
+.voice-toggle.disabled {
+  border-color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+}
+
+.voice-toggle.disabled:hover {
+  border-color: var(--red-dim, #662222);
+  color: var(--red, #ff2a2a);
+}
+
 /* Volume slider */
 .volume-slider {
   display: flex;

@@ -26,6 +26,7 @@ function App() {
   const [gameEndVictory, setGameEndVictory] = useState(false)
   const [gameStats, setGameStats] = useState(null)
   const [currentHint, setCurrentHint] = useState(null)
+  const [voiceEnabled, setVoiceEnabled] = useState(true) // TTS voice toggle
   const prevThreatLevel = useRef(0)
   
   const { sendMessage, lastMessage, connectionStatus } = useWebSocket(WS_STATE)
@@ -285,6 +286,8 @@ function App() {
             onToggle={toggleSound}
             onVolumeChange={setMasterVolume}
             onInitialize={initSound}
+            voiceEnabled={voiceEnabled}
+            onVoiceToggle={() => setVoiceEnabled(!voiceEnabled)}
           />
           <div className={`connection-status ${connectionStatus}`}>
             <span className="status-dot" />
@@ -483,7 +486,7 @@ function App() {
         gameActive={gameState?.game_active || false}
         lastEvent={lastEvent}
         etaSeconds={gameState?.eta_collapse_seconds || 0}
-        voiceEnabled={soundEnabled}
+        voiceEnabled={voiceEnabled}
       />
       
       {/* Game End Screen */}
