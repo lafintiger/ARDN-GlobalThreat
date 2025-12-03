@@ -9,9 +9,11 @@ venv/
 dist/
 build/
 
-# Environment files
+# Environment files & credentials
 .env
 .env.local
+credentials.local
+*.secret
 
 # IDE
 .idea/

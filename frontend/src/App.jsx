@@ -51,6 +51,11 @@ function App() {
   const startGame = () => fetch('http://localhost:8333/api/game/start', { method: 'POST' })
   const stopGame = () => fetch('http://localhost:8333/api/game/stop', { method: 'POST' })
   const resetGame = () => fetch('http://localhost:8333/api/game/reset', { method: 'POST' })
+  const setSessionDuration = (minutes) => fetch('http://localhost:8333/api/game/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ duration_minutes: minutes })
+  })
   
   if (!gameState) {
     return (
@@ -113,6 +118,10 @@ function App() {
         <GlobalStatus 
           threatLevel={gameState.global_threat_level}
           gameActive={gameState.game_active}
+          etaCollapseSeconds={gameState.eta_collapse_seconds || 0}
+          timeRemainingSeconds={gameState.time_remaining_seconds || 0}
+          elapsedSeconds={gameState.elapsed_seconds || 0}
+          sessionDurationMinutes={gameState.session_duration_minutes || 60}
         />
         
         <div className="header-right">
@@ -139,6 +148,39 @@ function App() {
             exit={{ height: 0, opacity: 0 }}
           >
             <h3>GAME MASTER CONTROLS</h3>
+            <div className="admin-section">
+              <span className="admin-label">SESSION DURATION</span>
+              <div className="session-buttons">
+                {[30, 40, 60, 90].map(mins => (
+                  <button 
+                    key={mins}
+                    onClick={() => setSessionDuration(mins)}
+                    className={`btn-session ${gameState?.session_duration_minutes === mins ? 'active' : ''}`}
+                  >
+                    {mins} MIN
+                  </button>
+                ))}
+                <div className="custom-time">
+                  <input 
+                    type="number" 
+                    min="10" 
+                    max="120" 
+                    placeholder="Custom"
+                    className="time-input"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const value = parseInt(e.target.value)
+                        if (value >= 10 && value <= 120) {
+                          setSessionDuration(value)
+                          e.target.value = ''
+                        }
+                      }
+                    }}
+                  />
+                  <span className="time-unit">MIN</span>
+                </div>
+              </div>
+            </div>
             <div className="admin-buttons">
               <button onClick={startGame} className="btn-start">START ATTACK</button>
               <button onClick={stopGame} className="btn-stop">STOP ATTACK</button>

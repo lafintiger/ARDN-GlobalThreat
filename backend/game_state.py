@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
 import asyncio
 import random
+import time
 
 @dataclass
 class Domain:
@@ -15,15 +16,15 @@ class Domain:
     icon: str
     description: str
     compromise_percent: float = 0.0
-    status: str = "SCANNING"  # SCANNING, ATTACKING, COMPROMISED, SECURED
-    attack_speed: float = 1.0  # Multiplier for attack progression
+    status: str = "SCANNING"
+    attack_speed: float = 1.0
     is_active: bool = True
 
 @dataclass 
 class Password:
     code: str
-    domain_id: Optional[str]  # None = affects all domains
-    reduction_percent: float  # How much to reduce compromise
+    domain_id: Optional[str]
+    reduction_percent: float
     one_time: bool = True
     used: bool = False
     hint: str = ""
@@ -34,7 +35,13 @@ class GameState:
         self.passwords: Dict[str, Password] = {}
         self.global_threat_level: float = 0.0
         self.game_active: bool = False
-        self.countdown_seconds: int = 3600  # 60 minutes default
+        
+        # Session timing
+        self.session_duration_minutes: int = 60  # Default 60 minutes
+        self.start_time: Optional[float] = None
+        self.elapsed_seconds: int = 0
+        
+        # Callbacks
         self.on_update_callbacks: List[Callable] = []
         self._attack_task: Optional[asyncio.Task] = None
         
@@ -65,13 +72,13 @@ class GameState:
                 name=name, 
                 icon=icon,
                 description=desc,
-                compromise_percent=random.uniform(5, 25),  # Start with some compromise
-                attack_speed=random.uniform(0.5, 1.5)
+                compromise_percent=random.uniform(5, 15),  # Start with some compromise
+                attack_speed=random.uniform(0.8, 1.2)  # Slight variation per domain
             )
         return domains
     
     def _init_default_passwords(self):
-        """Initialize some default passwords for testing."""
+        """Initialize default passwords for testing."""
         default_passwords = [
             Password("FIREWALL_ALPHA", "financial", 15.0, True, False, "Check the firewall logs"),
             Password("GRID_SECURE_7", "power", 20.0, True, False, "Power station access code"),
@@ -79,9 +86,62 @@ class GameState:
             Password("ORBITAL_DECAY", "satellite", 25.0, True, False, "Satellite command sequence"),
             Password("GLOBAL_RESET", None, 10.0, True, False, "Affects all systems"),
             Password("BACKDOOR_EXIT", None, 5.0, False, False, "Reusable emergency code"),
+            Password("NUCLEAR_FAILSAFE", "nuclear", 30.0, True, False, "Reactor emergency shutdown"),
+            Password("WATER_PURGE", "water", 20.0, True, False, "Treatment plant override"),
+            Password("COMM_BLACKOUT", "telecom", 15.0, True, False, "Network isolation protocol"),
+            Password("EVAC_PROTOCOL", "emergency", 20.0, True, False, "Emergency services backup"),
         ]
         for pw in default_passwords:
             self.passwords[pw.code.upper()] = pw
+    
+    def set_session_duration(self, minutes: int):
+        """Set the session duration in minutes (30, 40, 60, etc.)"""
+        self.session_duration_minutes = max(10, min(120, minutes))  # Clamp 10-120 min
+    
+    def _calculate_attack_increment(self) -> float:
+        """
+        Calculate attack increment based on session duration.
+        We want to go from ~10% average to 100% in the session time.
+        With updates every 2 seconds, that's (session_minutes * 30) updates.
+        Need to cover ~90% in that time, so increment = 90 / (minutes * 30)
+        """
+        updates_in_session = self.session_duration_minutes * 30  # Updates every 2 sec
+        base_increment = 90.0 / updates_in_session  # ~90% to cover
+        return base_increment
+    
+    def _calculate_eta_seconds(self) -> int:
+        """
+        Calculate estimated seconds until total collapse (all at 100%).
+        Based on current average and attack rate.
+        """
+        if not self.game_active:
+            return self.session_duration_minutes * 60
+        
+        # Calculate remaining percentage to cover
+        avg_compromise = self.global_threat_level
+        remaining_percent = 100 - avg_compromise
+        
+        if remaining_percent <= 0:
+            return 0
+        
+        # Calculate time based on attack rate
+        base_increment = self._calculate_attack_increment()
+        if base_increment <= 0:
+            return 9999
+        
+        updates_needed = remaining_percent / base_increment
+        seconds_remaining = int(updates_needed * 2)  # 2 seconds per update
+        
+        return max(0, seconds_remaining)
+    
+    def _calculate_time_remaining(self) -> int:
+        """Calculate remaining session time in seconds."""
+        if not self.game_active or self.start_time is None:
+            return self.session_duration_minutes * 60
+        
+        elapsed = time.time() - self.start_time
+        remaining = (self.session_duration_minutes * 60) - elapsed
+        return max(0, int(remaining))
     
     def add_password(self, code: str, domain_id: Optional[str], reduction: float, 
                      one_time: bool = True, hint: str = "") -> bool:
@@ -101,10 +161,7 @@ class GameState:
         return False
     
     def try_password(self, code: str) -> dict:
-        """
-        Attempt to use a password to reduce compromise.
-        Returns result dict with success status and message.
-        """
+        """Attempt to use a password to reduce compromise."""
         code = code.upper().strip()
         
         if code not in self.passwords:
@@ -128,7 +185,6 @@ class GameState:
         # Apply the reduction
         affected = []
         if password.domain_id:
-            # Single domain
             if password.domain_id in self.domains:
                 domain = self.domains[password.domain_id]
                 old_percent = domain.compromise_percent
@@ -140,7 +196,6 @@ class GameState:
                     "new_percent": domain.compromise_percent
                 })
         else:
-            # All domains
             for domain in self.domains.values():
                 old_percent = domain.compromise_percent
                 domain.compromise_percent = max(0, domain.compromise_percent - password.reduction_percent)
@@ -162,7 +217,7 @@ class GameState:
         }
     
     def set_domain_compromise(self, domain_id: str, percent: float) -> bool:
-        """Directly set a domain's compromise percentage (for game master)."""
+        """Directly set a domain's compromise percentage."""
         if domain_id in self.domains:
             self.domains[domain_id].compromise_percent = max(0, min(100, percent))
             self._update_global_threat()
@@ -170,7 +225,7 @@ class GameState:
         return False
     
     def _update_global_threat(self):
-        """Recalculate global threat level based on all domains."""
+        """Recalculate global threat level."""
         if not self.domains:
             self.global_threat_level = 0
             return
@@ -180,6 +235,14 @@ class GameState:
     def get_state(self) -> dict:
         """Get the full game state as a dictionary."""
         self._update_global_threat()
+        
+        # Calculate timing
+        eta_seconds = self._calculate_eta_seconds()
+        time_remaining = self._calculate_time_remaining()
+        
+        if self.start_time:
+            self.elapsed_seconds = int(time.time() - self.start_time)
+        
         return {
             "domains": {
                 id: {
@@ -195,7 +258,10 @@ class GameState:
             },
             "global_threat_level": round(self.global_threat_level, 1),
             "game_active": self.game_active,
-            "countdown_seconds": self.countdown_seconds
+            "session_duration_minutes": self.session_duration_minutes,
+            "elapsed_seconds": self.elapsed_seconds,
+            "time_remaining_seconds": time_remaining,
+            "eta_collapse_seconds": eta_seconds,
         }
     
     def _get_domain_status(self, domain: Domain) -> str:
@@ -214,6 +280,7 @@ class GameState:
     async def start_attack_simulation(self):
         """Start the automatic attack progression."""
         self.game_active = True
+        self.start_time = time.time()
         self._attack_task = asyncio.create_task(self._attack_loop())
     
     async def stop_attack_simulation(self):
@@ -229,13 +296,21 @@ class GameState:
     async def _attack_loop(self):
         """Main attack progression loop."""
         while self.game_active:
+            base_increment = self._calculate_attack_increment()
+            
             for domain in self.domains.values():
                 if domain.is_active and domain.compromise_percent < 100:
-                    # Random progression based on attack speed
-                    increment = random.uniform(0.1, 0.5) * domain.attack_speed
+                    # Apply increment with domain-specific speed variation
+                    variation = random.uniform(0.7, 1.3)
+                    increment = base_increment * domain.attack_speed * variation
                     domain.compromise_percent = min(100, domain.compromise_percent + increment)
             
             self._update_global_threat()
+            
+            # Check for total collapse
+            if self.global_threat_level >= 100:
+                # All systems compromised - game over
+                pass
             
             # Notify callbacks
             for callback in self.on_update_callbacks:
@@ -250,7 +325,9 @@ class GameState:
         """Reset the game to initial state."""
         self.domains = self._init_domains()
         self.global_threat_level = 0.0
-        self.countdown_seconds = 3600
+        self.start_time = None
+        self.elapsed_seconds = 0
+        self.game_active = False
         # Reset password usage
         for pw in self.passwords.values():
             pw.used = False
@@ -258,4 +335,3 @@ class GameState:
 
 # Global game state instance
 game_state = GameState()
-

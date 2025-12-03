@@ -155,6 +155,28 @@ async def start_game():
     return {"success": True, "message": "Attack simulation started"}
 
 
+class SessionConfig(BaseModel):
+    duration_minutes: int
+
+@app.post("/api/game/session")
+async def set_session_duration(config: SessionConfig):
+    """Set session duration in minutes (affects attack speed)"""
+    game_state.set_session_duration(config.duration_minutes)
+    return {
+        "success": True, 
+        "message": f"Session duration set to {config.duration_minutes} minutes",
+        "duration_minutes": game_state.session_duration_minutes
+    }
+
+@app.get("/api/game/session")
+async def get_session_duration():
+    """Get current session configuration"""
+    return {
+        "duration_minutes": game_state.session_duration_minutes,
+        "game_active": game_state.game_active,
+        "elapsed_seconds": game_state.elapsed_seconds
+    }
+
 @app.post("/api/game/stop")
 async def stop_game():
     """Stop the attack simulation"""
