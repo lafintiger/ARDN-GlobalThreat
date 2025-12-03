@@ -34,13 +34,19 @@ function AIChat() {
             streamingContentRef.current += data.token
             setStreamingContent(streamingContentRef.current)
           } else if (data.type === 'chat_end') {
-            setIsStreaming(false)
-            if (streamingContentRef.current) {
+            // Save the content before clearing anything
+            const finalContent = streamingContentRef.current
+            
+            // Add message to history FIRST, before clearing streaming state
+            if (finalContent && finalContent.trim()) {
               setMessages(prev => [
                 ...prev,
-                { role: 'assistant', content: streamingContentRef.current }
+                { role: 'assistant', content: finalContent }
               ])
             }
+            
+            // Then clear streaming state
+            setIsStreaming(false)
             setStreamingContent('')
             streamingContentRef.current = ''
           }
@@ -127,13 +133,14 @@ function AIChat() {
       </div>
       
       <div className="chat-messages">
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {messages.map((msg, index) => (
             <motion.div
-              key={index}
+              key={`msg-${index}-${msg.content.substring(0, 20)}`}
               className={`message ${msg.role}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
               {msg.role === 'assistant' && (
