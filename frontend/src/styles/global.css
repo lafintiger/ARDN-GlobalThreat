@@ -412,6 +412,7 @@ body {
   gap: var(--spacing-md);
   min-height: 0;
   overflow: hidden;
+  padding-bottom: 70px; /* Space for password entry */
 }
 
 .terminal-container,
