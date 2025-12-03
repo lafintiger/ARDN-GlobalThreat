@@ -19,40 +19,81 @@ A.R.D.N. is a web-based escape room interface that simulates a superintelligent 
 
 ## 🛠️ Setup
 
-### Prerequisites
+You have **three options** to run A.R.D.N.:
 
-- Python 3.9+
-- Node.js 18+
-- Ollama with `huihui_ai/qwen2.5-1m-abliterated` model
+| Method | Best For | Ollama |
+|--------|----------|--------|
+| **Local (npm)** | Development | Your local Ollama |
+| **Docker Option A** | Production | Your local Ollama (GPU) |
+| **Docker Option B** | Portable/Demo | Containerized (CPU-only) |
 
-### Backend Setup
+---
+
+### 🐳 Option A: Docker + Local Ollama (Recommended)
+
+Best performance - uses your GPU-accelerated local Ollama.
+
+**Prerequisites:** Docker, Docker Compose, Ollama running locally
 
 ```bash
+# 1. Start Ollama on your host (if not already running)
+ollama serve
+
+# 2. Pull the required model
+ollama pull huihui_ai/qwen3-coder-abliterated
+
+# 3. Start A.R.D.N.
+docker-compose up --build
+```
+
+Access at: **http://localhost:3333**
+
+---
+
+### 🐳 Option B: Full Docker (Self-Contained)
+
+Everything containerized - portable but slower AI (CPU-only).
+
+```bash
+docker-compose -f docker-compose.full.yml up --build
+
+# First time: Pull the model into the container
+docker exec -it ardn-ollama ollama pull huihui_ai/qwen3-coder-abliterated
+```
+
+Access at: **http://localhost:3333**
+
+> **GPU Support:** Edit `docker-compose.full.yml` and uncomment the `deploy` section under `ollama` for NVIDIA GPU acceleration.
+
+---
+
+### 💻 Option C: Local Development (npm)
+
+For development and customization.
+
+**Prerequisites:**
+- Python 3.9+
+- Node.js 18+
+- Ollama running locally
+
+```bash
+# Terminal 1 - Ollama
+ollama serve
+ollama pull huihui_ai/qwen3-coder-abliterated
+
+# Terminal 2 - Backend
 cd backend
 pip install -r requirements.txt
 python main.py
-```
 
-The backend will run on `http://localhost:8333`
-
-### Frontend Setup
-
-```bash
+# Terminal 3 - Frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-The frontend will run on `http://localhost:3333`
-
-### Ollama Setup
-
-Ensure Ollama is running with the required model:
-
-```bash
-ollama pull huihui_ai/qwen2.5-1m-abliterated
-ollama serve
-```
+- Backend: **http://localhost:8333**
+- Frontend: **http://localhost:3333**
 
 ## 🎮 Game Master Guide
 

@@ -1,0 +1,26 @@
+﻿# Dependencies
+node_modules/
+frontend/node_modules/
+backend/__pycache__/
+**/__pycache__/
+**/*.pyc
+
+# Build outputs
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Git
+.git/
+
+# Secrets
+.env
+.env.local
+credentials.local
+
+# Logs
+*.log

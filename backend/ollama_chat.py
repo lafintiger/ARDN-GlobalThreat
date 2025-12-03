@@ -6,10 +6,12 @@ Handles AI personality chat with challenge system integration.
 import httpx
 import json
 import re
+import os
 from typing import AsyncGenerator, Optional, Dict, Any, Callable
 from challenges import challenge_manager, ChallengeType, RewardType
 
-OLLAMA_BASE_URL = "http://localhost:11434"
+# Use environment variable for Docker support, fallback to localhost for local dev
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 MODEL_NAME = "huihui_ai/qwen3-coder-abliterated"
 
 # Maximum context length - set high for the 256k model

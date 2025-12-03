@@ -13,6 +13,7 @@ import SoundControl from './components/SoundControl'
 import HintDisplay from './components/HintDisplay'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useSoundSystem } from './hooks/useSoundSystem'
+import { WS_STATE } from './config'
 
 function App() {
   const [gameState, setGameState] = useState(null)
@@ -27,7 +28,7 @@ function App() {
   const [currentHint, setCurrentHint] = useState(null)
   const prevThreatLevel = useRef(0)
   
-  const { sendMessage, lastMessage, connectionStatus } = useWebSocket('ws://localhost:8333/ws/state')
+  const { sendMessage, lastMessage, connectionStatus } = useWebSocket(WS_STATE)
   
   // Sound system
   const {

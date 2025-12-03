@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { WS_CHAT } from '../config'
 import './AIChat.css'
 
 function AIChat() {
@@ -19,7 +20,7 @@ function AIChat() {
   useEffect(() => {
     const connect = () => {
       try {
-        const ws = new WebSocket('ws://localhost:8333/ws/chat')
+        const ws = new WebSocket(WS_CHAT)
         wsRef.current = ws
         
         ws.onmessage = (event) => {

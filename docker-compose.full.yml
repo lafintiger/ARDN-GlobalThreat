@@ -1,0 +1,74 @@
+# Full Docker Compose - Includes Ollama container
+# Usage: docker-compose -f docker-compose.full.yml up --build
+#
+# This configuration includes Ollama running in a container.
+# Note: CPU-only by default. For GPU, uncomment the deploy section.
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # OLLAMA - AI Model Server
+  # ===========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ardn-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - ardn-network
+    # Uncomment for NVIDIA GPU support:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ===========================================
+  # BACKEND - FastAPI Python Server
+  # ===========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ardn-backend
+    ports:
+      - "8333:8333"
+    environment:
+      # Connect to Ollama container
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    networks:
+      - ardn-network
+
+  # ===========================================
+  # FRONTEND - React + Nginx
+  # ===========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ardn-frontend
+    ports:
+      - "3333:3333"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - ardn-network
+
+networks:
+  ardn-network:
+    driver: bridge
+
+volumes:
+  ollama-data:
+    driver: local
+

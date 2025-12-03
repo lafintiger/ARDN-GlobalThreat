@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { getWsAttack } from '../config'
 import './AttackTerminal.css'
 
 function AttackTerminal({ domainId, domainName }) {
@@ -18,7 +19,7 @@ function AttackTerminal({ domainId, domainName }) {
     
     const connect = () => {
       try {
-        const ws = new WebSocket(`ws://localhost:8333/ws/attack/${domainId}`)
+        const ws = new WebSocket(getWsAttack(domainId))
         wsRef.current = ws
         
         ws.onopen = () => {
