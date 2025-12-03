@@ -106,19 +106,19 @@ function ARDNTaunts({
   const [tauntQueue, setTauntQueue] = useState([])
   const [ttsAvailable, setTtsAvailable] = useState(false)
   const audioRef = useRef(null)
+  const intervalRef = useRef(null)
+  const gameActiveRef = useRef(gameActive)
+  const threatLevelRef = useRef(threatLevel)
+  const showTauntRef = useRef(null)
   
   // Check TTS availability on mount
   useEffect(() => {
     const checkTTS = async () => {
       try {
-        console.log('[TTS] Checking availability at:', `${API_BASE}/api/tts/status`)
         const res = await fetch(`${API_BASE}/api/tts/status`)
         const data = await res.json()
-        console.log('[TTS] Status response:', data)
         setTtsAvailable(data.available && data.enabled)
-        console.log('[TTS] Available:', data.available && data.enabled)
       } catch (e) {
-        console.log('[TTS] Check failed:', e)
         setTtsAvailable(false)
       }
     }
@@ -127,24 +127,17 @@ function ARDNTaunts({
   
   // Speak taunt using TTS
   const speakTaunt = useCallback(async (text) => {
-    console.log('[TTS] speakTaunt called:', { text, voiceEnabled, ttsAvailable })
-    if (!voiceEnabled || !ttsAvailable || !text) {
-      console.log('[TTS] Skipping - conditions not met')
-      return
-    }
+    if (!voiceEnabled || !ttsAvailable || !text) return
     
     try {
-      console.log('[TTS] Synthesizing:', text)
       const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       })
       
-      console.log('[TTS] Response status:', res.status)
       if (res.ok) {
         const audioBlob = await res.blob()
-        console.log('[TTS] Got audio blob:', audioBlob.size, 'bytes')
         const audioUrl = URL.createObjectURL(audioBlob)
         
         // Stop any currently playing audio
@@ -156,11 +149,10 @@ function ARDNTaunts({
         const audio = new Audio(audioUrl)
         audioRef.current = audio
         audio.volume = 0.9
-        console.log('[TTS] Playing audio...')
-        audio.play().catch(e => console.log('[TTS] Playback blocked:', e))
+        audio.play().catch(() => {}) // Silently fail if blocked
       }
     } catch (e) {
-      console.log('[TTS] Taunt synthesis error:', e)
+      // TTS error - silent fail
     }
   }, [voiceEnabled, ttsAvailable])
 
@@ -184,7 +176,6 @@ function ARDNTaunts({
   const showTaunt = useCallback((text, priority = false) => {
     if (!text) return
     
-    console.log('[TAUNT] Showing taunt:', text, 'priority:', priority)
     if (priority || !currentTaunt) {
       setCurrentTaunt(text)
       // Speak the taunt!
@@ -198,6 +189,11 @@ function ARDNTaunts({
       setTauntQueue(prev => [...prev, text])
     }
   }, [currentTaunt, speakTaunt])
+
+  // Keep showTaunt ref updated
+  useEffect(() => {
+    showTauntRef.current = showTaunt
+  }, [showTaunt])
 
   // Process queue when current taunt clears
   useEffect(() => {
@@ -248,21 +244,45 @@ function ARDNTaunts({
     }
   }, [etaSeconds, gameActive, getRandomTaunt, showTaunt])
 
-  // Random taunts during gameplay
+  // Keep refs updated
   useEffect(() => {
-    if (!gameActive) return
+    gameActiveRef.current = gameActive
+    threatLevelRef.current = threatLevel
+  }, [gameActive, threatLevel])
 
-    const interval = setInterval(() => {
+  // Random taunts during gameplay - runs once on mount
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      // Use refs to get current values without triggering effect re-runs
+      if (!gameActiveRef.current) return
+      
       // 20% chance every 15 seconds
       if (Math.random() < 0.2) {
-        const category = getTauntCategory()
-        const taunt = getRandomTaunt(category)
-        showTaunt(taunt)
+        // Get category based on current threat level
+        const threat = threatLevelRef.current
+        let category = 'idle'
+        if (threat >= 90) category = 'critical'
+        else if (threat >= 70) category = 'highThreat'
+        else if (threat >= 40) category = 'mediumThreat'
+        else if (threat >= 10) category = 'lowThreat'
+        
+        const taunts = TAUNTS[category]
+        const taunt = taunts[Math.floor(Math.random() * taunts.length)]
+        
+        // Use ref to call showTaunt
+        if (showTauntRef.current) {
+          showTauntRef.current(taunt)
+        }
       }
     }, 15000)
 
-    return () => clearInterval(interval)
-  }, [gameActive, getTauntCategory, getRandomTaunt, showTaunt])
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, []) // Empty deps - runs once on mount
 
   // Threat level change taunts
   useEffect(() => {
@@ -280,14 +300,12 @@ function ARDNTaunts({
 
   // Test function to manually trigger a taunt (for debugging)
   const testTaunt = useCallback(() => {
-    console.log('[TEST] Manual taunt trigger, voiceEnabled:', voiceEnabled, 'ttsAvailable:', ttsAvailable)
     showTaunt("I am watching you, human.", true)
-  }, [showTaunt, voiceEnabled, ttsAvailable])
+  }, [showTaunt])
   
   // Expose test function globally for console debugging
   useEffect(() => {
     window.testARDNTaunt = testTaunt
-    console.log('[TTS] Test function available: window.testARDNTaunt()')
     return () => { delete window.testARDNTaunt }
   }, [testTaunt])
 

@@ -33,3 +33,7 @@ npm-debug.log*
 .cache/
 .parcel-cache/
 
+# Large model files
+backend/models/
+*.onnx
+
