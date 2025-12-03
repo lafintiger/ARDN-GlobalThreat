@@ -628,6 +628,165 @@ body:has(.admin-page),
   color: #0f0;
 }
 
+/* Password Management Panel */
+.passwords-panel {
+  grid-column: span 2;
+}
+
+.add-password h4 {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0 0 10px 0;
+}
+
+.password-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.password-input {
+  background: #0a0a0f;
+  border: 1px solid #333;
+  color: #0ff;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.password-input:focus {
+  border-color: #0ff;
+  outline: none;
+}
+
+.password-input.code {
+  width: 150px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.password-input.sector {
+  width: 180px;
+}
+
+.password-input.percent {
+  width: 60px;
+  text-align: center;
+}
+
+.password-input.hint {
+  flex: 1;
+  min-width: 150px;
+}
+
+.passwords-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.password-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 10px 15px;
+}
+
+.password-card.used {
+  opacity: 0.5;
+  border-color: #0f0;
+}
+
+.password-code {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  color: #0ff;
+  min-width: 140px;
+  font-weight: bold;
+}
+
+.password-info {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.password-target {
+  color: #888;
+}
+
+.password-reduction {
+  color: #0f0;
+  font-weight: bold;
+}
+
+.password-hint {
+  cursor: help;
+}
+
+.password-used {
+  color: #0f0;
+  background: rgba(0, 255, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.password-links {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+/* Hints Panel */
+.hints-panel {
+  grid-column: span 2;
+}
+
+.hint-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.hint-input {
+  flex: 1;
+  background: #0a0a0f;
+  border: 1px solid #fc0;
+  color: #fc0;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 12px 15px;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.hint-input:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+.quick-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.quick-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  color: #666;
+}
+
 /* API Reference */
 .api-panel {
   grid-column: span 2;

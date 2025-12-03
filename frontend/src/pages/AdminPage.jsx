@@ -15,6 +15,9 @@ function AdminPage() {
   const [challengeStats, setChallengeStats] = useState({ completed: 0, failed: 0 })
   const [activeChallenge, setActiveChallenge] = useState(null)
   const [chatSession, setChatSession] = useState(null)
+  const [passwords, setPasswords] = useState({})
+  const [newPassword, setNewPassword] = useState({ code: '', domain_id: '', reduction_percent: 15, hint: '' })
+  const [hintText, setHintText] = useState('')
 
   // Override global overflow:hidden for this page
   useEffect(() => {
@@ -45,16 +48,18 @@ function AdminPage() {
   useEffect(() => {
     const fetchState = async () => {
       try {
-        const [stateRes, missionsRes, challengesRes, chatRes] = await Promise.all([
+        const [stateRes, missionsRes, challengesRes, chatRes, passwordsRes] = await Promise.all([
           fetch(`${API_BASE}/api/state`),
           fetch(`${API_BASE}/api/missions`),
           fetch(`${API_BASE}/api/challenges`),
-          fetch(`${API_BASE}/api/chat/session`)
+          fetch(`${API_BASE}/api/chat/session`),
+          fetch(`${API_BASE}/api/passwords`)
         ])
         const state = await stateRes.json()
         const missionsData = await missionsRes.json()
         const challengesData = await challengesRes.json()
         const chatData = await chatRes.json()
+        const passwordsData = await passwordsRes.json()
         
         setGameState(state)
         setMissions(missionsData.missions || [])
@@ -64,6 +69,7 @@ function AdminPage() {
         setChallengeStats(challengesData.stats || { completed: 0, failed: 0 })
         setActiveChallenge(challengesData.active_challenge)
         setChatSession(chatData)
+        setPasswords(passwordsData || {})
       } catch (err) {
         console.error('Failed to fetch state:', err)
       }
@@ -208,6 +214,60 @@ function AdminPage() {
     showNotification('Challenges reset')
   }
 
+  // Password controls
+  const addPassword = async () => {
+    if (!newPassword.code) {
+      showNotification('Enter a password code', 'error')
+      return
+    }
+    const res = await fetch(`${API_BASE}/api/password/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: newPassword.code.toUpperCase(),
+        domain_id: newPassword.domain_id || null,
+        reduction_percent: parseFloat(newPassword.reduction_percent) || 15,
+        one_time: true,
+        hint: newPassword.hint
+      })
+    })
+    const result = await res.json()
+    if (result.success) {
+      showNotification(`Password "${newPassword.code}" added!`, 'success')
+      setNewPassword({ code: '', domain_id: '', reduction_percent: 15, hint: '' })
+    } else {
+      showNotification(result.detail || 'Failed to add password', 'error')
+    }
+  }
+
+  const deletePassword = async (code) => {
+    await fetch(`${API_BASE}/api/password/${code}`, { method: 'DELETE' })
+    showNotification(`Password "${code}" deleted`)
+  }
+
+  // Hint controls
+  const sendHint = async () => {
+    if (!hintText.trim()) {
+      showNotification('Enter a hint message', 'error')
+      return
+    }
+    await fetch(`${API_BASE}/api/hint/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: hintText })
+    })
+    showNotification('Hint sent to players!', 'success')
+    setHintText('')
+  }
+
+  const quickHints = [
+    "Check the power station for clues",
+    "The answer involves network security",
+    "Look for hidden codes in the room",
+    "Try talking to A.R.D.N. - ask for a riddle",
+    "One of the passwords contains 'OVERRIDE'",
+  ]
+
   if (!gameState) {
     return <div className="admin-loading">Loading Admin Panel...</div>
   }
@@ -277,6 +337,36 @@ function AdminPage() {
               min="10"
               max="180"
             />
+          </div>
+        </section>
+
+        {/* Send Hints Panel */}
+        <section className="admin-panel hints-panel">
+          <h2>💡 Send Hint to Players</h2>
+          <div className="hint-form">
+            <input
+              type="text"
+              placeholder="Type a hint message..."
+              value={hintText}
+              onChange={(e) => setHintText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendHint()}
+              className="hint-input"
+            />
+            <button onClick={sendHint} className="btn btn-global">
+              📤 SEND HINT
+            </button>
+          </div>
+          <div className="quick-hints">
+            <span className="quick-label">Quick hints:</span>
+            {quickHints.map((hint, i) => (
+              <button 
+                key={i}
+                onClick={() => { setHintText(hint); }}
+                className="btn btn-sm btn-duration"
+              >
+                {hint.slice(0, 25)}...
+              </button>
+            ))}
           </div>
         </section>
 
@@ -452,6 +542,82 @@ function AdminPage() {
             <button onClick={resetChallenges} className="btn btn-reset-mission">
               ↻ Reset All Challenges
             </button>
+          </div>
+        </section>
+
+        {/* Password Management Panel */}
+        <section className="admin-panel passwords-panel">
+          <h2>🔐 Security Codes</h2>
+          
+          {/* Add New Password */}
+          <div className="add-password">
+            <h4>Add New Code</h4>
+            <div className="password-form">
+              <input
+                type="text"
+                placeholder="CODE"
+                value={newPassword.code}
+                onChange={(e) => setNewPassword({...newPassword, code: e.target.value.toUpperCase()})}
+                className="password-input code"
+              />
+              <select
+                value={newPassword.domain_id}
+                onChange={(e) => setNewPassword({...newPassword, domain_id: e.target.value})}
+                className="password-input sector"
+              >
+                <option value="">All Sectors</option>
+                {domains.map(d => (
+                  <option key={d.id} value={d.id}>{d.icon} {d.name}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                placeholder="%"
+                value={newPassword.reduction_percent}
+                onChange={(e) => setNewPassword({...newPassword, reduction_percent: e.target.value})}
+                className="password-input percent"
+                min="1"
+                max="100"
+              />
+              <input
+                type="text"
+                placeholder="Hint (optional)"
+                value={newPassword.hint}
+                onChange={(e) => setNewPassword({...newPassword, hint: e.target.value})}
+                className="password-input hint"
+              />
+              <button onClick={addPassword} className="btn btn-complete">+ ADD</button>
+            </div>
+          </div>
+          
+          {/* Existing Passwords */}
+          <div className="passwords-list">
+            {Object.entries(passwords).map(([code, pw]) => (
+              <div key={code} className={`password-card ${pw.used ? 'used' : ''}`}>
+                <div className="password-code">{code}</div>
+                <div className="password-info">
+                  <span className="password-target">
+                    {pw.domain_id ? `🎯 ${pw.domain_id}` : '🌐 ALL'}
+                  </span>
+                  <span className="password-reduction">-{pw.reduction_percent}%</span>
+                  {pw.hint && <span className="password-hint" title={pw.hint}>💡</span>}
+                  {pw.used && <span className="password-used">✓ USED</span>}
+                </div>
+                <button 
+                  onClick={() => deletePassword(code)} 
+                  className="btn btn-sm btn-fail"
+                >
+                  🗑
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          {/* Quick Links */}
+          <div className="password-links">
+            <Link to="/gm-cheatsheet" target="_blank" className="btn btn-global">
+              📋 Open GM Cheat Sheet
+            </Link>
           </div>
         </section>
 

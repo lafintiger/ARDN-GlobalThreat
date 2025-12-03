@@ -631,6 +631,27 @@ async def get_chat_session():
     }
 
 
+# ============================================
+# HINT API
+# GM can send hints to players
+# ============================================
+
+class HintSend(BaseModel):
+    message: str
+
+@app.post("/api/hint/send")
+async def send_hint(hint: HintSend):
+    """GM sends a hint to all connected players."""
+    await manager.broadcast({
+        "type": "hint",
+        "data": {
+            "message": hint.message
+        }
+    })
+    mission_manager.log_event("hint_sent", {"message": hint.message})
+    return {"success": True, "message": "Hint sent to players"}
+
+
 # WebSocket endpoints
 @app.websocket("/ws/state")
 async def websocket_state(websocket: WebSocket):

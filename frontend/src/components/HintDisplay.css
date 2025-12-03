@@ -1,0 +1,117 @@
+/* Hint Display Styles */
+
+.hint-display {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  min-width: 400px;
+  max-width: 600px;
+}
+
+.hint-glow {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  background: radial-gradient(ellipse at center, rgba(255, 204, 0, 0.3), transparent 70%);
+  animation: hint-glow-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes hint-glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.hint-content {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  background: linear-gradient(135deg, rgba(40, 30, 0, 0.95), rgba(20, 15, 0, 0.95));
+  border: 2px solid #fc0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 
+    0 0 30px rgba(255, 204, 0, 0.4),
+    0 0 60px rgba(255, 204, 0, 0.2),
+    inset 0 0 30px rgba(255, 204, 0, 0.1);
+}
+
+.hint-icon {
+  font-size: 2.5rem;
+  animation: hint-icon-bounce 1s ease-in-out infinite;
+}
+
+@keyframes hint-icon-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.hint-body {
+  flex: 1;
+}
+
+.hint-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #fc0;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 10px #fc0;
+}
+
+.hint-text {
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  color: #fff;
+  margin: 0;
+  line-height: 1.5;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.hint-dismiss {
+  background: none;
+  border: 1px solid #fc0;
+  color: #fc0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.hint-dismiss:hover {
+  background: #fc0;
+  color: #000;
+}
+
+.hint-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 204, 0, 0.03) 2px,
+    rgba(255, 204, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  border-radius: 12px;
+  animation: hint-scan 3s linear infinite;
+}
+
+@keyframes hint-scan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+

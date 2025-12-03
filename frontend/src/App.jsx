@@ -10,6 +10,7 @@ import ARDNTaunts from './components/ARDNTaunts'
 import AtmosphereEffects from './components/AtmosphereEffects'
 import GameEndScreen from './components/GameEndScreen'
 import SoundControl from './components/SoundControl'
+import HintDisplay from './components/HintDisplay'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useSoundSystem } from './hooks/useSoundSystem'
 
@@ -23,6 +24,7 @@ function App() {
   const [showGameEnd, setShowGameEnd] = useState(false)
   const [gameEndVictory, setGameEndVictory] = useState(false)
   const [gameStats, setGameStats] = useState(null)
+  const [currentHint, setCurrentHint] = useState(null)
   const prevThreatLevel = useRef(0)
   
   const { sendMessage, lastMessage, connectionStatus } = useWebSocket('ws://localhost:8333/ws/state')
@@ -69,6 +71,10 @@ function App() {
       } else if (lastMessage.type === 'mission_failed') {
         playFailure()
         setLastEvent({ type: 'mission_failed', data: lastMessage.data })
+      } else if (lastMessage.type === 'hint') {
+        // GM sent a hint
+        setCurrentHint(lastMessage.data?.message)
+        playSuccess() // Play a pleasant sound
       }
     }
   }, [lastMessage, playSuccess, playFailure])
@@ -476,6 +482,12 @@ function App() {
           setShowGameEnd(false)
           resetGame()
         }}
+      />
+      
+      {/* Hint Display */}
+      <HintDisplay 
+        hint={currentHint}
+        onDismiss={() => setCurrentHint(null)}
       />
     </div>
   )
