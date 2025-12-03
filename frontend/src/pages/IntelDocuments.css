@@ -1,0 +1,388 @@
+/* Intel Documents - Classified Document Styling */
+
+.intel-page {
+  background: #1a1a2e;
+  min-height: 100vh;
+  padding: 20px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Header */
+.intel-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+  border: 2px solid #0f3460;
+  border-radius: 10px;
+}
+
+.intel-header h1 {
+  color: #e94560;
+  font-size: 2rem;
+  margin: 0 0 10px 0;
+  text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+}
+
+.intel-header p {
+  color: #a0a0a0;
+  margin: 0 0 20px 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.print-all-btn,
+.toggle-answers-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.print-all-btn {
+  background: #0f3460;
+  color: #fff;
+}
+
+.print-all-btn:hover {
+  background: #1a4a7a;
+}
+
+.toggle-answers-btn {
+  background: #e94560;
+  color: #fff;
+}
+
+.toggle-answers-btn:hover {
+  background: #ff6b6b;
+}
+
+.back-link {
+  color: #4ecdc4;
+  text-decoration: none;
+  padding: 12px 24px;
+  border: 2px solid #4ecdc4;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.back-link:hover {
+  background: #4ecdc4;
+  color: #1a1a2e;
+}
+
+/* Answer Key */
+.answer-key {
+  background: #2d132c;
+  border: 2px solid #e94560;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.answer-key h2 {
+  color: #e94560;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.answers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+}
+
+.answer-item {
+  background: #1a1a2e;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border-left: 4px solid #e94560;
+}
+
+.answer-item strong {
+  color: #4ecdc4;
+}
+
+.answer-item code {
+  background: #0f3460;
+  color: #4ecdc4;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-size: 0.9rem;
+}
+
+.answer-item .hint-text {
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: 8px;
+}
+
+/* Document Grid */
+.documents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+  gap: 25px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Document Card */
+.document-card {
+  background: #f5f5dc;
+  border: 3px solid #333;
+  border-radius: 3px;
+  box-shadow: 
+    5px 5px 15px rgba(0,0,0,0.5),
+    inset 0 0 50px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.document-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(0,0,0,0.03) 28px,
+      rgba(0,0,0,0.03) 29px
+    );
+  pointer-events: none;
+}
+
+.document-card::after {
+  content: 'CLASSIFIED';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 4rem;
+  font-weight: bold;
+  color: rgba(233, 69, 96, 0.08);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.doc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px 20px;
+  background: #333;
+  color: #fff;
+}
+
+.doc-icon {
+  font-size: 2.5rem;
+}
+
+.doc-meta h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.classification {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.classification.restricted {
+  background: #f59e0b;
+  color: #000;
+}
+
+.classification.confidential {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.classification.top-secret,
+.classification.top-secret---sci {
+  background: #dc2626;
+  color: #fff;
+}
+
+.classification.ultra-secret {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.classification.internal-only {
+  background: #10b981;
+  color: #fff;
+}
+
+.doc-sector {
+  padding: 10px 20px;
+  background: #e8e8d0;
+  border-bottom: 1px dashed #999;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.doc-sector strong {
+  color: #0f3460;
+}
+
+.doc-content {
+  padding: 15px 20px;
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #222;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+  background: transparent;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.doc-actions {
+  padding: 15px 20px;
+  background: #e8e8d0;
+  border-top: 1px dashed #999;
+  text-align: center;
+}
+
+.doc-actions button {
+  padding: 10px 20px;
+  background: #0f3460;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.doc-actions button:hover {
+  background: #1a4a7a;
+}
+
+.doc-answer {
+  padding: 15px 20px;
+  background: #2d132c;
+  color: #fff;
+  border-top: 3px solid #e94560;
+}
+
+.doc-answer code {
+  background: #e94560;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.doc-answer strong {
+  color: #4ecdc4;
+}
+
+/* Footer */
+.intel-footer {
+  text-align: center;
+  padding: 30px;
+  color: #666;
+  margin-top: 30px;
+}
+
+.intel-footer p {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .intel-page {
+    background: #fff;
+    padding: 0;
+  }
+  
+  .documents-grid {
+    display: block;
+  }
+  
+  .document-card {
+    page-break-inside: avoid;
+    page-break-after: always;
+    margin-bottom: 0;
+    box-shadow: none;
+    border: 2px solid #000;
+  }
+  
+  .document-card::after {
+    color: rgba(233, 69, 96, 0.15);
+  }
+  
+  .doc-header {
+    background: #333 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .doc-content {
+    font-size: 0.65rem;
+    line-height: 1.3;
+  }
+  
+  .intel-footer {
+    display: none;
+  }
+}
+
+@page {
+  margin: 0.5in;
+  size: letter;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .documents-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .doc-content {
+    font-size: 0.6rem;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Animation for classified stamp */
+@keyframes stamp {
+  0% { transform: translate(-50%, -50%) rotate(-30deg) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) rotate(-30deg) scale(1.2); opacity: 0.15; }
+  100% { transform: translate(-50%, -50%) rotate(-30deg) scale(1); opacity: 0.08; }
+}
+
+.document-card:hover::after {
+  animation: stamp 0.3s ease-out;
+}
+
