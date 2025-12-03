@@ -2,11 +2,12 @@
   position: relative;
   background: var(--bg-secondary);
   border: 1px solid var(--text-dim);
-  border-radius: 6px;
-  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 8px;
+  padding: var(--spacing-md) var(--spacing-lg);
   cursor: pointer;
   transition: all 0.2s ease;
   overflow: hidden;
+  min-height: 120px;
 }
 
 .domain-card::before {
@@ -50,23 +51,24 @@
 }
 
 .domain-icon {
-  font-size: 1.2rem;
+  font-size: 1.8rem;
   filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
 }
 
 .domain-status {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--status-color);
-  padding: 2px 8px;
+  padding: 4px 10px;
   border: 1px solid var(--status-color);
   border-radius: 4px;
   letter-spacing: 1px;
+  font-weight: 600;
 }
 
 .domain-name {
   font-family: var(--font-ui);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: var(--spacing-sm);
@@ -80,9 +82,9 @@
 }
 
 .progress-bar {
-  height: 6px;
+  height: 10px;
   background: var(--bg-primary);
-  border-radius: 3px;
+  border-radius: 5px;
   overflow: visible;
   position: relative;
   border: 1px solid var(--text-dim);
@@ -90,7 +92,7 @@
 
 .progress-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 5px;
   transition: width 0.3s ease;
   box-shadow: 0 0 10px var(--status-color);
 }
@@ -99,23 +101,23 @@
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
 }
 
 .progress-labels {
   display: flex;
   justify-content: space-between;
-  margin-top: 4px;
+  margin-top: 6px;
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--text-dim);
 }
 
 .progress-value {
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.95rem;
 }
 
 .activity-indicator {
@@ -123,18 +125,19 @@
   align-items: center;
   gap: var(--spacing-xs);
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
 }
 
 .activity-dots {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   color: var(--status-color);
 }
 
 .activity-dots span {
-  font-size: 0.5rem;
+  font-size: 0.6rem;
 }
 
 .activity-text {
