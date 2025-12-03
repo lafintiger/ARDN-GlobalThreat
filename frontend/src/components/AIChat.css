@@ -65,6 +65,34 @@
   letter-spacing: 2px;
 }
 
+.chat-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.voice-toggle {
+  background: var(--bg-primary);
+  border: 1px solid var(--text-dim);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.voice-toggle:hover {
+  border-color: var(--cyan);
+  opacity: 1;
+}
+
+.voice-toggle.active {
+  border-color: var(--red);
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(255, 42, 42, 0.3);
+}
+
 .chat-status {
   font-family: var(--font-mono);
   font-size: 0.85rem;

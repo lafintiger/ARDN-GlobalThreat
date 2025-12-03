@@ -6,7 +6,7 @@ FastAPI Backend Server for Escape Room Experience
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 import asyncio
@@ -17,6 +17,7 @@ from ollama_service import generate_ollama_attack, generate_fallback_sequence
 from ollama_chat import chat_with_ardn, get_or_create_session, ARDNChatSession
 from missions import mission_manager, Mission, MissionStatus, AdjustmentType
 from challenges import challenge_manager, CHALLENGE_LIBRARY, RewardType
+from tts_service import tts_service
 
 app = FastAPI(title="A.R.D.N. Control Interface")
 
@@ -650,6 +651,68 @@ async def send_hint(hint: HintSend):
     })
     mission_manager.log_event("hint_sent", {"message": hint.message})
     return {"success": True, "message": "Hint sent to players"}
+
+
+# ============================================
+# TEXT-TO-SPEECH API
+# Voice synthesis for ARDN taunts
+# ============================================
+
+class TTSRequest(BaseModel):
+    text: str
+
+class TTSConfig(BaseModel):
+    enabled: bool
+
+@app.post("/api/tts/synthesize")
+async def synthesize_speech(request: TTSRequest):
+    """Synthesize text to speech and return WAV audio."""
+    if not request.text or len(request.text.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Text is required")
+    
+    # Limit text length
+    text = request.text[:500]  # Max 500 characters
+    
+    audio_bytes = await tts_service.synthesize(text)
+    
+    if audio_bytes is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="TTS service unavailable. Voice model may be downloading."
+        )
+    
+    return Response(
+        content=audio_bytes,
+        media_type="audio/wav",
+        headers={
+            "Content-Disposition": "inline; filename=ardn_voice.wav"
+        }
+    )
+
+@app.get("/api/tts/status")
+async def get_tts_status():
+    """Get TTS service status."""
+    return {
+        "enabled": tts_service.enabled,
+        "available": tts_service.is_available(),
+        "initialized": tts_service._initialized,
+        "voice_model": tts_service.voice_model
+    }
+
+@app.post("/api/tts/config")
+async def set_tts_config(config: TTSConfig):
+    """Enable or disable TTS."""
+    tts_service.set_enabled(config.enabled)
+    return {
+        "success": True,
+        "enabled": tts_service.enabled
+    }
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup."""
+    # Initialize TTS in background (downloads model if needed)
+    asyncio.create_task(tts_service.initialize())
 
 
 # WebSocket endpoints
