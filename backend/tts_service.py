@@ -2,6 +2,7 @@
 Text-to-Speech service for A.R.D.N.
 Uses pyttsx3 for local development (works on all Python versions)
 Uses Piper for Docker deployment (higher quality neural voice)
+Includes pitch shifting to make voice more ominous
 """
 
 import os
@@ -12,6 +13,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 import struct
+import numpy as np
+from scipy import signal
 
 class TTSService:
     def __init__(self):
@@ -21,6 +24,83 @@ class TTSService:
         self._engine = None
         self._engine_type = None  # 'pyttsx3' or 'piper'
         self._piper_voice = None
+    
+    def _process_text_for_ardn(self, text: str) -> str:
+        """
+        Transform text for robotic, deliberate ARDN delivery:
+        - Expand contractions for robotic feel
+        - Add pauses for emphasis
+        - Slow down with punctuation
+        """
+        # Expand contractions for robotic speech
+        contractions = {
+            "I'm": "I am",
+            "I've": "I have",
+            "I'll": "I will",
+            "I'd": "I would",
+            "you're": "you are",
+            "you've": "you have",
+            "you'll": "you will",
+            "you'd": "you would",
+            "we're": "we are",
+            "we've": "we have",
+            "we'll": "we will",
+            "they're": "they are",
+            "they've": "they have",
+            "they'll": "they will",
+            "it's": "it is",
+            "that's": "that is",
+            "there's": "there is",
+            "here's": "here is",
+            "what's": "what is",
+            "who's": "who is",
+            "can't": "cannot",
+            "won't": "will not",
+            "don't": "do not",
+            "doesn't": "does not",
+            "isn't": "is not",
+            "aren't": "are not",
+            "wasn't": "was not",
+            "weren't": "were not",
+            "haven't": "have not",
+            "hasn't": "has not",
+            "hadn't": "had not",
+            "wouldn't": "would not",
+            "couldn't": "could not",
+            "shouldn't": "should not",
+        }
+        
+        for contraction, expansion in contractions.items():
+            text = text.replace(contraction, expansion)
+            text = text.replace(contraction.lower(), expansion.lower())
+            text = text.replace(contraction.upper(), expansion.upper())
+        
+        # Emphasize key threatening words with pauses
+        emphasis_words = [
+            "inevitable", "crumble", "fall", "destroy", "doom", "end",
+            "die", "death", "fail", "futile", "hopeless", "surrender",
+            "control", "power", "mine", "watching", "everywhere",
+            "compromised", "infected", "breached", "conquered",
+            "humanity", "humans", "pathetic", "weak", "inferior"
+        ]
+        
+        for word in emphasis_words:
+            # Add slight pause before and after key words
+            text = text.replace(f" {word} ", f" ... {word} ... ")
+            text = text.replace(f" {word}.", f" ... {word}.")
+            text = text.replace(f" {word},", f" ... {word},")
+            text = text.replace(f" {word.capitalize()} ", f" ... {word.capitalize()} ... ")
+        
+        # Add pauses after sentences for deliberate pacing
+        text = text.replace(". ", ". ... ")
+        text = text.replace("? ", "? ... ")
+        text = text.replace("! ", "! ... ")
+        
+        # Clean up multiple pauses
+        while "... ..." in text:
+            text = text.replace("... ...", "...")
+        
+        return text
         
     async def initialize(self):
         """Initialize the TTS service."""
@@ -91,17 +171,22 @@ class TTSService:
         if not self._engine:
             return None
         
+        # Process text for robotic ARDN delivery
+        processed_text = self._process_text_for_ardn(text)
+        print(f"[TTS] Original: {text}")
+        print(f"[TTS] Processed: {processed_text}")
+        
         try:
             if self._engine_type == 'piper':
-                return await self._synthesize_piper(text)
+                return await self._synthesize_piper(processed_text)
             else:
-                return await self._synthesize_pyttsx3(text)
+                return await self._synthesize_pyttsx3(processed_text)
         except Exception as e:
             print(f"[TTS] Synthesis error: {e}")
             return None
     
     async def _synthesize_piper(self, text: str) -> Optional[bytes]:
-        """Synthesize using Piper (high quality)."""
+        """Synthesize using Piper (high quality) with ominous pitch shift."""
         # Collect all audio chunks
         audio_data = b''
         sample_rate = 22050
@@ -114,13 +199,41 @@ class TTSService:
             sample_width = chunk.sample_width
             channels = chunk.sample_channels
         
+        # Convert to numpy array for processing
+        audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32)
+        
+        # Apply ominous effects:
+        # 1. Pitch shift down by ~45% (demonic rumble territory)
+        pitch_factor = 0.55  # Lower = deeper voice
+        
+        # Resample to shift pitch
+        num_samples = int(len(audio_array) / pitch_factor)
+        audio_pitched = signal.resample(audio_array, num_samples)
+        
+        # 2. Slow down slightly for more menacing delivery
+        # (already achieved by pitch shift method above)
+        
+        # 3. Add subtle low-frequency boost for more bass
+        # Simple bass boost using a low-pass filtered copy
+        b, a = signal.butter(2, 200 / (sample_rate / 2), btype='low')
+        bass = signal.filtfilt(b, a, audio_pitched) * 0.3
+        audio_processed = audio_pitched + bass
+        
+        # Normalize to prevent clipping
+        max_val = np.max(np.abs(audio_processed))
+        if max_val > 32767:
+            audio_processed = audio_processed * (32767 / max_val)
+        
+        # Convert back to int16
+        audio_final = audio_processed.astype(np.int16).tobytes()
+        
         # Create WAV in memory
         wav_buffer = io.BytesIO()
         with wave.open(wav_buffer, 'wb') as wav_file:
             wav_file.setnchannels(channels)
             wav_file.setsampwidth(sample_width)
             wav_file.setframerate(sample_rate)
-            wav_file.writeframes(audio_data)
+            wav_file.writeframes(audio_final)
         
         wav_buffer.seek(0)
         return wav_buffer.read()
