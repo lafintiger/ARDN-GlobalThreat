@@ -110,6 +110,7 @@ function ARDNTaunts({
   const gameActiveRef = useRef(gameActive)
   const threatLevelRef = useRef(threatLevel)
   const showTauntRef = useRef(null)
+  const isSpeakingRef = useRef(false) // Prevent overlapping TTS
   
   // Check TTS availability on mount
   useEffect(() => {
@@ -129,7 +130,18 @@ function ARDNTaunts({
   const speakTaunt = useCallback(async (text) => {
     if (!voiceEnabled || !ttsAvailable || !text) return
     
+    // Prevent overlapping TTS - skip if already speaking
+    if (isSpeakingRef.current) return
+    isSpeakingRef.current = true
+    
     try {
+      // Stop any currently playing audio first
+      if (audioRef.current) {
+        audioRef.current.pause()
+        URL.revokeObjectURL(audioRef.current.src)
+        audioRef.current = null
+      }
+      
       const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,19 +152,28 @@ function ARDNTaunts({
         const audioBlob = await res.blob()
         const audioUrl = URL.createObjectURL(audioBlob)
         
-        // Stop any currently playing audio
-        if (audioRef.current) {
-          audioRef.current.pause()
-          URL.revokeObjectURL(audioRef.current.src)
-        }
-        
         const audio = new Audio(audioUrl)
         audioRef.current = audio
-        audio.volume = 0.9
-        audio.play().catch(() => {}) // Silently fail if blocked
+        audio.volume = 0.8
+        
+        // Mark as not speaking when audio ends
+        audio.onended = () => {
+          isSpeakingRef.current = false
+          URL.revokeObjectURL(audioUrl)
+        }
+        audio.onerror = () => {
+          isSpeakingRef.current = false
+          URL.revokeObjectURL(audioUrl)
+        }
+        
+        audio.play().catch(() => {
+          isSpeakingRef.current = false
+        })
+      } else {
+        isSpeakingRef.current = false
       }
     } catch (e) {
-      // TTS error - silent fail
+      isSpeakingRef.current = false
     }
   }, [voiceEnabled, ttsAvailable])
 
@@ -256,8 +277,8 @@ function ARDNTaunts({
       // Use refs to get current values without triggering effect re-runs
       if (!gameActiveRef.current) return
       
-      // 20% chance every 15 seconds
-      if (Math.random() < 0.2) {
+      // 15% chance every 30 seconds (reduced to prevent spam)
+      if (Math.random() < 0.15) {
         // Get category based on current threat level
         const threat = threatLevelRef.current
         let category = 'idle'
@@ -274,13 +295,19 @@ function ARDNTaunts({
           showTauntRef.current(taunt)
         }
       }
-    }, 15000)
+    }, 30000) // 30 seconds between checks
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
         intervalRef.current = null
       }
+      // Stop any playing audio on unmount
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+      isSpeakingRef.current = false
     }
   }, []) // Empty deps - runs once on mount
 
