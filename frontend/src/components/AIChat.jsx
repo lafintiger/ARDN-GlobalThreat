@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { WS_CHAT, API_BASE_URL } from '../config'
+import { WS_CHAT, API_BASE } from '../config'
 import './AIChat.css'
 
 function AIChat() {
@@ -24,7 +24,7 @@ function AIChat() {
   useEffect(() => {
     const checkTTS = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/tts/status`)
+        const res = await fetch(`${API_BASE}/api/tts/status`)
         const data = await res.json()
         setVoiceAvailable(data.available)
         setVoiceEnabled(data.enabled)
@@ -41,7 +41,7 @@ function AIChat() {
     if (!voiceEnabled || !voiceAvailable) return
     
     try {
-      const res = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
+      const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
@@ -72,7 +72,7 @@ function AIChat() {
     const newState = !voiceEnabled
     setVoiceEnabled(newState)
     try {
-      await fetch(`${API_BASE_URL}/api/tts/config`, {
+      await fetch(`${API_BASE}/api/tts/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: newState })
