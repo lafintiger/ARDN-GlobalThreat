@@ -61,52 +61,208 @@ class SoundGenerator {
     }
   }
 
-  // Dark ambient drone
+  // Rich atmospheric ambient soundscape
   playAmbient() {
     if (!this.isInitialized) return
     if (this.activeOscillators.has('ambient')) return
 
-    const osc1 = this.audioContext.createOscillator()
-    const osc2 = this.audioContext.createOscillator()
-    const gain = this.audioContext.createGain()
-    const filter = this.audioContext.createBiquadFilter()
+    const ctx = this.audioContext
+    const now = ctx.currentTime
 
-    osc1.type = 'sine'
-    osc1.frequency.value = 55 // Low A
-    osc2.type = 'sine'
-    osc2.frequency.value = 82.5 // E
+    // Main output bus with compression
+    const ambientBus = ctx.createGain()
+    ambientBus.gain.value = 0.25
+    
+    const compressor = ctx.createDynamicsCompressor()
+    compressor.threshold.value = -24
+    compressor.knee.value = 30
+    compressor.ratio.value = 12
+    ambientBus.connect(compressor)
+    compressor.connect(this.masterGain)
 
-    filter.type = 'lowpass'
-    filter.frequency.value = 200
+    // === LAYER 1: Deep sub bass drone ===
+    const subOsc = ctx.createOscillator()
+    const subGain = ctx.createGain()
+    const subFilter = ctx.createBiquadFilter()
+    subOsc.type = 'sine'
+    subOsc.frequency.value = 40 // Sub bass
+    subFilter.type = 'lowpass'
+    subFilter.frequency.value = 80
+    subGain.gain.value = 0.3
+    subOsc.connect(subFilter)
+    subFilter.connect(subGain)
+    subGain.connect(ambientBus)
+    subOsc.start()
 
-    gain.gain.value = 0.15
+    // Sub bass slow wobble
+    const subLfo = ctx.createOscillator()
+    const subLfoGain = ctx.createGain()
+    subLfo.frequency.value = 0.05
+    subLfoGain.gain.value = 3
+    subLfo.connect(subLfoGain)
+    subLfoGain.connect(subOsc.frequency)
+    subLfo.start()
 
-    osc1.connect(filter)
-    osc2.connect(filter)
-    filter.connect(gain)
-    gain.connect(this.masterGain)
+    // === LAYER 2: Mid drone pad (chord) ===
+    const padFreqs = [55, 82.5, 110, 165] // Am chord
+    const padOscs = []
+    const padGain = ctx.createGain()
+    const padFilter = ctx.createBiquadFilter()
+    padFilter.type = 'lowpass'
+    padFilter.frequency.value = 400
+    padFilter.Q.value = 2
+    padGain.gain.value = 0.15
 
-    osc1.start()
-    osc2.start()
+    padFreqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      osc.type = i % 2 === 0 ? 'sine' : 'triangle'
+      osc.frequency.value = freq
+      // Slight detune for richness
+      osc.detune.value = (Math.random() - 0.5) * 10
+      osc.connect(padFilter)
+      osc.start()
+      padOscs.push(osc)
+    })
+    padFilter.connect(padGain)
+    padGain.connect(ambientBus)
 
-    // Slow LFO modulation
-    const lfo = this.audioContext.createOscillator()
-    const lfoGain = this.audioContext.createGain()
-    lfo.frequency.value = 0.1
-    lfoGain.gain.value = 10
-    lfo.connect(lfoGain)
-    lfoGain.connect(osc1.frequency)
-    lfo.start()
+    // Filter sweep LFO
+    const filterLfo = ctx.createOscillator()
+    const filterLfoGain = ctx.createGain()
+    filterLfo.frequency.value = 0.03
+    filterLfoGain.gain.value = 200
+    filterLfo.connect(filterLfoGain)
+    filterLfoGain.connect(padFilter.frequency)
+    filterLfo.start()
 
-    this.activeOscillators.set('ambient', { osc1, osc2, gain, lfo })
+    // === LAYER 3: High ethereal shimmer ===
+    const shimmerOsc = ctx.createOscillator()
+    const shimmerOsc2 = ctx.createOscillator()
+    const shimmerGain = ctx.createGain()
+    const shimmerFilter = ctx.createBiquadFilter()
+    shimmerOsc.type = 'sine'
+    shimmerOsc.frequency.value = 880
+    shimmerOsc2.type = 'sine'
+    shimmerOsc2.frequency.value = 1320
+    shimmerFilter.type = 'bandpass'
+    shimmerFilter.frequency.value = 1000
+    shimmerFilter.Q.value = 5
+    shimmerGain.gain.value = 0.02
+    shimmerOsc.connect(shimmerFilter)
+    shimmerOsc2.connect(shimmerFilter)
+    shimmerFilter.connect(shimmerGain)
+    shimmerGain.connect(ambientBus)
+    shimmerOsc.start()
+    shimmerOsc2.start()
+
+    // Shimmer tremolo
+    const shimmerLfo = ctx.createOscillator()
+    const shimmerLfoGain = ctx.createGain()
+    shimmerLfo.frequency.value = 0.2
+    shimmerLfoGain.gain.value = 0.01
+    shimmerLfo.connect(shimmerLfoGain)
+    shimmerLfoGain.connect(shimmerGain.gain)
+    shimmerLfo.start()
+
+    // === LAYER 4: Noise texture (like server room hum) ===
+    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate)
+    const noiseData = noiseBuffer.getChannelData(0)
+    for (let i = 0; i < noiseData.length; i++) {
+      noiseData[i] = (Math.random() * 2 - 1) * 0.5
+    }
+    const noiseSource = ctx.createBufferSource()
+    noiseSource.buffer = noiseBuffer
+    noiseSource.loop = true
+    const noiseFilter = ctx.createBiquadFilter()
+    noiseFilter.type = 'bandpass'
+    noiseFilter.frequency.value = 150
+    noiseFilter.Q.value = 0.5
+    const noiseGain = ctx.createGain()
+    noiseGain.gain.value = 0.08
+    noiseSource.connect(noiseFilter)
+    noiseFilter.connect(noiseGain)
+    noiseGain.connect(ambientBus)
+    noiseSource.start()
+
+    // === LAYER 5: Random data blips ===
+    let blipInterval = null
+    const playBlip = () => {
+      if (!this.activeOscillators.has('ambient')) return
+      
+      const blipOsc = ctx.createOscillator()
+      const blipGain = ctx.createGain()
+      const blipFilter = ctx.createBiquadFilter()
+      
+      blipOsc.type = 'square'
+      blipOsc.frequency.value = 200 + Math.random() * 2000
+      blipFilter.type = 'bandpass'
+      blipFilter.frequency.value = blipOsc.frequency.value
+      blipFilter.Q.value = 10
+      blipGain.gain.value = 0
+      
+      blipOsc.connect(blipFilter)
+      blipFilter.connect(blipGain)
+      blipGain.connect(ambientBus)
+      
+      const now = ctx.currentTime
+      blipGain.gain.setValueAtTime(0, now)
+      blipGain.gain.linearRampToValueAtTime(0.03, now + 0.01)
+      blipGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1)
+      
+      blipOsc.start(now)
+      blipOsc.stop(now + 0.15)
+      
+      // Random interval for next blip
+      blipInterval = setTimeout(playBlip, 1000 + Math.random() * 4000)
+    }
+    setTimeout(playBlip, 2000)
+
+    // === LAYER 6: Slow breathing pulse ===
+    const pulseOsc = ctx.createOscillator()
+    const pulseGain = ctx.createGain()
+    pulseOsc.type = 'sine'
+    pulseOsc.frequency.value = 65
+    pulseGain.gain.value = 0
+    pulseOsc.connect(pulseGain)
+    pulseGain.connect(ambientBus)
+    pulseOsc.start()
+
+    // Breathing rhythm
+    const breathe = () => {
+      if (!this.activeOscillators.has('ambient')) return
+      const now = ctx.currentTime
+      pulseGain.gain.setValueAtTime(0.05, now)
+      pulseGain.gain.linearRampToValueAtTime(0.15, now + 2)
+      pulseGain.gain.linearRampToValueAtTime(0.05, now + 4)
+      setTimeout(breathe, 4500)
+    }
+    breathe()
+
+    // Store all elements for cleanup
+    this.activeOscillators.set('ambient', {
+      subOsc, subLfo, padOscs, padGain, padFilter, filterLfo,
+      shimmerOsc, shimmerOsc2, shimmerLfo, noiseSource, pulseOsc,
+      ambientBus, compressor, blipInterval
+    })
   }
 
   stopAmbient() {
     const ambient = this.activeOscillators.get('ambient')
     if (ambient) {
-      ambient.osc1.stop()
-      ambient.osc2.stop()
-      ambient.lfo.stop()
+      try {
+        ambient.subOsc?.stop()
+        ambient.subLfo?.stop()
+        ambient.padOscs?.forEach(osc => osc.stop())
+        ambient.filterLfo?.stop()
+        ambient.shimmerOsc?.stop()
+        ambient.shimmerOsc2?.stop()
+        ambient.shimmerLfo?.stop()
+        ambient.noiseSource?.stop()
+        ambient.pulseOsc?.stop()
+        if (ambient.blipInterval) clearTimeout(ambient.blipInterval)
+      } catch (e) {
+        // Ignore errors from already stopped oscillators
+      }
       this.activeOscillators.delete('ambient')
     }
   }
