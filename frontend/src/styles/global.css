@@ -882,6 +882,48 @@ body {
   transform: translateY(-2px);
 }
 
+/* System Test Button */
+.test-section {
+  flex-direction: column;
+  padding-top: var(--spacing-md);
+  border-top: 1px dashed var(--purple);
+  margin-top: var(--spacing-sm);
+}
+
+.btn-test-all {
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #6a00ff, #b026ff);
+  border: 2px solid var(--purple);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px rgba(176, 38, 255, 0.8);
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.3);
+}
+
+.btn-test-all:hover {
+  box-shadow: 0 0 40px rgba(176, 38, 255, 0.7);
+  transform: translateY(-3px) scale(1.02);
+  background: linear-gradient(135deg, #8000ff, #c040ff);
+}
+
+.btn-test-all:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.test-description {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: var(--spacing-xs);
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
 /* Utility Classes */
 .text-red { color: var(--red); }
 .text-cyan { color: var(--cyan); }

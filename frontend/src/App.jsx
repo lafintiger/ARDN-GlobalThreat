@@ -474,6 +474,105 @@ function App() {
                 </button>
               </div>
             </div>
+            
+            {/* System Test Button */}
+            <div className="admin-section test-section">
+              <span className="admin-label">🧪 SYSTEM DIAGNOSTICS</span>
+              <button 
+                className="btn-test-all"
+                onClick={async () => {
+                  const results = []
+                  
+                  // 1. Start ambient sound
+                  try {
+                    initSound()
+                    playAmbient()
+                    results.push('✅ Ambient Sound: Started')
+                  } catch (e) {
+                    results.push('❌ Ambient Sound: ' + e.message)
+                  }
+                  
+                  // 2. Test TTS
+                  try {
+                    const ttsRes = await fetch('http://localhost:8333/api/tts/synthesize', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        text: 'System diagnostic complete. All subsystems operational. Your resistance is noted... and irrelevant.',
+                        speed: 0.9
+                      })
+                    })
+                    if (ttsRes.ok) {
+                      const blob = await ttsRes.blob()
+                      const audio = new Audio(URL.createObjectURL(blob))
+                      audio.volume = 0.8
+                      audio.play()
+                      results.push('✅ TTS Voice: Playing')
+                    } else {
+                      results.push('❌ TTS Voice: Failed to synthesize')
+                    }
+                  } catch (e) {
+                    results.push('❌ TTS Voice: ' + e.message)
+                  }
+                  
+                  // 3. Generate ComfyUI image
+                  if (comfySettings.connected) {
+                    try {
+                      await triggerComfyUI('taunt', 'system test')
+                      results.push('✅ ComfyUI Image: Generating...')
+                    } catch (e) {
+                      results.push('❌ ComfyUI Image: ' + e.message)
+                    }
+                  } else {
+                    results.push('⚠️ ComfyUI Image: Not connected')
+                  }
+                  
+                  // 4. Check backend connection
+                  try {
+                    const stateRes = await fetch('http://localhost:8333/api/state')
+                    if (stateRes.ok) {
+                      results.push('✅ Backend API: Connected')
+                    } else {
+                      results.push('❌ Backend API: Error ' + stateRes.status)
+                    }
+                  } catch (e) {
+                    results.push('❌ Backend API: ' + e.message)
+                  }
+                  
+                  // 5. Check WebSocket
+                  results.push(connectionStatus === 'connected' ? '✅ WebSocket: Connected' : '❌ WebSocket: ' + connectionStatus)
+                  
+                  // 6. Test scorecard sync
+                  try {
+                    const syncRes = await fetch('http://localhost:8333/api/students/top', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ students: [{ name: 'Test Student', score: 100 }] })
+                    })
+                    results.push(syncRes.ok ? '✅ Scorecard Sync: Working' : '❌ Scorecard Sync: Failed')
+                  } catch (e) {
+                    results.push('❌ Scorecard Sync: ' + e.message)
+                  }
+                  
+                  // 7. Test TTS status
+                  try {
+                    const ttsStatus = await fetch('http://localhost:8333/api/tts/status')
+                    const ttsData = await ttsStatus.json()
+                    results.push(ttsData.available ? `✅ TTS Engine: ${ttsData.voice_model}` : '❌ TTS Engine: Not available')
+                  } catch (e) {
+                    results.push('❌ TTS Engine: ' + e.message)
+                  }
+                  
+                  // Display results
+                  alert('🧪 SYSTEM DIAGNOSTICS\n\n' + results.join('\n'))
+                }}
+              >
+                🧪 TEST ALL SYSTEMS
+              </button>
+              <p className="test-description">
+                Tests: Ambient sound, TTS voice, ComfyUI image, backend API, WebSocket, scorecard sync
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
