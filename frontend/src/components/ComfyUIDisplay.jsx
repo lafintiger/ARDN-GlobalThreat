@@ -4,7 +4,7 @@
  * 3s flicker in → 5s display → 3s flicker out
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './ComfyUIDisplay.css'
 
@@ -12,38 +12,66 @@ function ComfyUIDisplay({ imageData, onComplete }) {
   const [phase, setPhase] = useState('hidden') // hidden, flicker-in, display, flicker-out
   const [flickerFrame, setFlickerFrame] = useState(0)
   const timeoutRef = useRef(null)
+  const onCompleteRef = useRef(onComplete)
+  const currentImageRef = useRef(null)
+  
+  // Keep onComplete ref updated without triggering effect
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  }, [onComplete])
+
+  // Clear all timeouts helper
+  const clearAllTimeouts = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
+    // If no image or same image, do nothing
     if (!imageData) {
       setPhase('hidden')
+      clearAllTimeouts()
       return
     }
-
+    
+    // If it's the same image, don't restart
+    if (currentImageRef.current === imageData) {
+      return
+    }
+    
+    // New image - store it and start sequence
+    currentImageRef.current = imageData
+    clearAllTimeouts()
+    
     // Start the sequence
     setPhase('flicker-in')
 
     // Flicker in for 3 seconds
-    timeoutRef.current = setTimeout(() => {
+    const flickerInTimeout = setTimeout(() => {
       setPhase('display')
       
       // Display for 5 seconds
-      timeoutRef.current = setTimeout(() => {
+      const displayTimeout = setTimeout(() => {
         setPhase('flicker-out')
         
         // Flicker out for 3 seconds
-        timeoutRef.current = setTimeout(() => {
+        const flickerOutTimeout = setTimeout(() => {
           setPhase('hidden')
-          onComplete?.()
+          currentImageRef.current = null
+          onCompleteRef.current?.()
         }, 3000)
+        timeoutRef.current = flickerOutTimeout
       }, 5000)
+      timeoutRef.current = displayTimeout
     }, 3000)
+    timeoutRef.current = flickerInTimeout
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
+      clearAllTimeouts()
     }
-  }, [imageData, onComplete])
+  }, [imageData, clearAllTimeouts])
 
   // Flicker animation
   useEffect(() => {
