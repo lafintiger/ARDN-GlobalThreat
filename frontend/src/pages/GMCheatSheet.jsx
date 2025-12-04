@@ -44,10 +44,13 @@ function GMCheatSheet() {
         🖨️ PRINT THIS PAGE
       </button>
 
-      {/* AI Chat Guide Link */}
-      <a href="/ai-chat-guide" className="ai-guide-link no-print">
-        🤖 AI Chat Guide →
-      </a>
+      {/* Navigation Links */}
+      <div className="nav-links no-print">
+        <a href="/ai-chat-guide" className="nav-link">🤖 AI Chat Guide</a>
+        <a href="/scorecard" className="nav-link">📋 Student Scorecard</a>
+        <a href="/intel" className="nav-link">📄 Intel Documents</a>
+        <a href="/" className="nav-link">← Back to Game</a>
+      </div>
 
       {/* Header */}
       <header className="cheat-header">
