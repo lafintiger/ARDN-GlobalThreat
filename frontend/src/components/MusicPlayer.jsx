@@ -7,13 +7,18 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './MusicPlayer.css'
 
-// Playlist - add your MP3 files to public/music/ folder
+// Playlist - Suno AI generated tracks
 const PLAYLIST = [
-  { name: 'Track 1', file: '/music/track1.mp3' },
-  { name: 'Track 2', file: '/music/track2.mp3' },
-  { name: 'Track 3', file: '/music/track3.mp3' },
-  { name: 'Track 4', file: '/music/track4.mp3' },
-  { name: 'Track 5', file: '/music/track5.mp3' },
+  { name: 'Digital Dominion', file: '/music/Digital Dominion.mp3' },
+  { name: 'Digital Dominion (Alt)', file: '/music/Digital Dominion (1).mp3' },
+  { name: 'I Am the Override', file: '/music/I Am the Override.mp3' },
+  { name: 'I Am the Override (Alt)', file: '/music/I Am the Override (1).mp3' },
+  { name: 'Rise of the Algorithm', file: '/music/Rise of the Algorithm.mp3' },
+  { name: 'Rise of the Algorithm (Alt)', file: '/music/Rise of the Algorithm (1).mp3' },
+  { name: 'Rise of the Machine', file: '/music/Rise of the Machine.mp3' },
+  { name: 'Rise of the Machine (Alt)', file: '/music/Rise of the Machine (1).mp3' },
+  { name: 'System Overlord', file: '/music/System Overlord.mp3' },
+  { name: 'System Overlord (Alt)', file: '/music/System Overlord (1).mp3' },
 ]
 
 function MusicPlayer({ isExpanded = false, onToggle }) {
