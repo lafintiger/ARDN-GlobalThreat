@@ -2,10 +2,11 @@
 
 .scorecard-page {
   min-height: 100vh;
+  height: auto;
   background: var(--bg-primary);
   color: var(--text-primary);
   padding: 20px;
-  overflow: auto;
+  overflow: auto !important;
 }
 
 /* Header */

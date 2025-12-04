@@ -56,6 +56,14 @@ html.intel-page-active #root {
   overflow-x: hidden !important;
 }
 
+/* Allow scrolling on scorecard page */
+html.scorecard-page-active,
+html.scorecard-page-active body,
+html.scorecard-page-active #root {
+  height: auto !important;
+  overflow: auto !important;
+}
+
 body {
   font-family: var(--font-ui);
   background: var(--bg-primary);

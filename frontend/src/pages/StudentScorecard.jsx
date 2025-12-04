@@ -53,6 +53,14 @@ function StudentScorecard() {
   const [gameState, setGameState] = useState(null)
   const [filter, setFilter] = useState('all') // all, active, completed
 
+  // Enable scrolling on this page
+  useEffect(() => {
+    document.documentElement.classList.add('scorecard-page-active')
+    return () => {
+      document.documentElement.classList.remove('scorecard-page-active')
+    }
+  }, [])
+
   // Load saved data on mount
   useEffect(() => {
     const saved = localStorage.getItem('ardn_scorecard')
