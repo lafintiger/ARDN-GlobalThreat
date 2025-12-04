@@ -45,18 +45,24 @@ A.R.D.N. is a web-based escape room interface that simulates a superintelligent 
 - Python 3.9+ (Python 3.10 recommended for Piper TTS)
 - Node.js 18+
 - Ollama running locally
+- Docker (for Piper TTS voice)
 
 ```bash
 # Terminal 1 - Start Ollama
 ollama serve
 ollama pull huihui_ai/qwen3-coder-abliterated
 
-# Terminal 2 - Backend
+# Terminal 2 - Start Piper TTS (Docker)
+docker run -d --name piper -p 10200:10200 \
+  -e PIPER_VOICE=en_US-hfc_male-medium \
+  lscr.io/linuxserver/piper:latest
+
+# Terminal 3 - Backend
 cd backend
 pip install -r requirements.txt
 python main.py
 
-# Terminal 3 - Frontend
+# Terminal 4 - Frontend
 cd frontend
 npm install
 npm run dev
@@ -111,6 +117,7 @@ docker exec -it ardn-ollama ollama pull huihui_ai/qwen3-coder-abliterated
 - **START/STOP/RESET** - Control game state
 - **Score Controls** - +1/-1 buttons for team score
 - **ComfyUI Controls** - Trigger AI-generated images
+- **🧪 TEST ALL SYSTEMS** - One-click test of sound, voice, images, and connectivity
 
 ### Student Scorecard (`/scorecard`)
 
@@ -135,12 +142,16 @@ Track up to 40 students with:
 
 ### ComfyUI Integration
 
-Generate AI images that flash on screen:
+Generate AI images that flash on screen with a glitch effect:
 
-1. Run ComfyUI locally or on network
+1. Run ComfyUI locally or on network (`--listen 0.0.0.0` for network access)
 2. Configure URL in Admin panel (default: `http://127.0.0.1:8188`)
 3. Set your model name (e.g., `z-image.safetensors`)
 4. Click trigger buttons: TAUNT, THREAT, DESTRUCTION
+
+**AI-Generated Prompts:** A.R.D.N. can also generate its own image prompts during chat! When ARDN feels like taunting, it will add `[IMAGE: description]` to its response, triggering contextual images based on the conversation.
+
+**Personalization:** Top-scoring students from the scorecard are synced to the AI, allowing personalized taunts like "I SEE YOU JOSE" overlaid on generated images.
 
 ### Default Passwords
 
@@ -211,9 +222,26 @@ Place MP3 files in `frontend/public/music/` and update the playlist in `frontend
 
 ### Voice Settings
 
+**Using Wyoming Piper (Recommended):**
+
+```bash
+# Change voice by restarting container with different PIPER_VOICE
+docker stop piper && docker rm piper
+docker run -d --name piper -p 10200:10200 \
+  -e PIPER_VOICE=en_US-hfc_male-medium \
+  lscr.io/linuxserver/piper:latest
+```
+
+Available voices:
+- `en_US-hfc_male-medium` - Deep male (recommended)
+- `en_US-ryan-high` - Clear male
+- `en_GB-alan-low` - British male
+- See: https://rhasspy.github.io/piper-samples/
+
+**Pitch & Effects:**
 Edit `backend/tts_service.py`:
 - `pitch_factor` - Lower = deeper voice (default 0.65)
-- `steps` - Speed adjustment
+- Bass boost and robotic diction are applied automatically
 
 ### AI Personality
 
