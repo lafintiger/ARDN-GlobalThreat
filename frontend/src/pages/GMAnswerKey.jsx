@@ -3,7 +3,29 @@
  * Includes: Security Codes, Intel Document Codes, AI Chat Riddles
  */
 
+import { useEffect } from 'react'
 import './GMAnswerKey.css'
+
+// Enable scrolling on this page (override global overflow:hidden)
+const useEnableScroll = () => {
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    const root = document.getElementById('root')
+    
+    html.style.cssText = 'height: auto !important; overflow: auto !important; overflow-x: hidden !important;'
+    body.style.cssText = 'height: auto !important; overflow: auto !important; overflow-x: hidden !important;'
+    if (root) {
+      root.style.cssText = 'height: auto !important; overflow: visible !important;'
+    }
+    
+    return () => {
+      html.style.cssText = ''
+      body.style.cssText = ''
+      if (root) root.style.cssText = ''
+    }
+  }, [])
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 1: SECURITY CODES (entered in "Enter Security Code" field)
@@ -64,6 +86,7 @@ const CHAT_RIDDLES = [
 ]
 
 function GMAnswerKey() {
+  useEnableScroll()
   const handlePrint = () => window.print()
 
   return (
