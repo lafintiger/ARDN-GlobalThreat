@@ -3,10 +3,11 @@
 .scorecard-page {
   min-height: 100vh;
   height: auto;
+  min-width: max-content;
   background: var(--bg-primary);
   color: var(--text-primary);
   padding: 20px;
-  overflow: auto !important;
+  overflow: visible !important;
 }
 
 /* Header */
@@ -239,7 +240,7 @@
 
 /* Scorecard Table */
 .scorecard-container {
-  overflow-x: auto;
+  overflow: visible;
   margin-bottom: 20px;
 }
 
