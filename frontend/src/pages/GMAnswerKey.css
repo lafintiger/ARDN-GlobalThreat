@@ -1,0 +1,403 @@
+/* GM Answer Key - Printable Cheat Sheet */
+
+.answer-key-page {
+  background: #1a1a2e;
+  min-height: 100vh;
+  padding: 30px;
+  font-family: 'Courier New', Courier, monospace;
+  color: #fff;
+}
+
+.answer-key-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #2d132c 0%, #1a1a2e 100%);
+  border: 3px solid #e94560;
+  border-radius: 10px;
+}
+
+.answer-key-header h1 {
+  color: #e94560;
+  font-size: 2rem;
+  margin: 0 0 10px 0;
+  text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+}
+
+.answer-key-header .subtitle {
+  color: #ff6b6b;
+  font-size: 1rem;
+  margin: 0 0 20px 0;
+  font-weight: bold;
+}
+
+.header-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.print-btn, .link-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.2s;
+}
+
+.print-btn {
+  background: #e94560;
+  color: #fff;
+}
+
+.print-btn:hover {
+  background: #ff6b6b;
+}
+
+.link-btn {
+  background: #0f3460;
+  color: #4ecdc4;
+  border: 2px solid #4ecdc4;
+}
+
+.link-btn:hover {
+  background: #4ecdc4;
+  color: #1a1a2e;
+}
+
+/* Answers Table */
+.answers-table {
+  margin-bottom: 30px;
+  overflow-x: auto;
+}
+
+.answers-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #16213e;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.answers-table th {
+  background: #0f3460;
+  color: #4ecdc4;
+  padding: 15px;
+  text-align: left;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #e94560;
+}
+
+.answers-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #2a2a4a;
+  vertical-align: middle;
+}
+
+.answers-table tr:hover {
+  background: #1f2f4f;
+}
+
+.sector-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sector-icon {
+  font-size: 1.5rem;
+}
+
+.sector-name {
+  font-weight: bold;
+  color: #fff;
+}
+
+.code-cell code {
+  background: #e94560;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.challenge-cell {
+  color: #4ecdc4;
+  font-weight: bold;
+}
+
+.hint-cell {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* Quick Reference */
+.quick-reference {
+  background: #16213e;
+  border: 2px solid #4ecdc4;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.quick-reference h2 {
+  color: #4ecdc4;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.codes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.code-item {
+  background: #0f3460;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 4px solid #e94560;
+}
+
+.code-item .code-icon {
+  font-size: 1.3rem;
+}
+
+.code-item code {
+  background: #e94560;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Tools Reference */
+.tools-reference {
+  background: #16213e;
+  border: 2px solid #0f3460;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.tools-reference h2 {
+  color: #fff;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.tool-item {
+  background: #0f3460;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tool-item strong {
+  color: #4ecdc4;
+}
+
+.tool-item span {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* Footer */
+.footer-note {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.footer-note p {
+  margin: 5px 0;
+}
+
+.footer-note .small {
+  font-size: 0.8rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* PRINT STYLES - Optimized for 8.5x11 Letter */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .answer-key-page {
+    background: #fff !important;
+    padding: 0.25in !important;
+    color: #000 !important;
+  }
+
+  .answer-key-header {
+    background: #f0f0f0 !important;
+    border: 2px solid #333 !important;
+    padding: 15px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .answer-key-header h1 {
+    color: #c00 !important;
+    font-size: 18pt !important;
+    text-shadow: none !important;
+  }
+
+  .answer-key-header .subtitle {
+    color: #c00 !important;
+    font-size: 10pt !important;
+  }
+
+  .answers-table {
+    margin-bottom: 20px !important;
+  }
+
+  .answers-table table {
+    background: #fff !important;
+    border: 1px solid #000 !important;
+  }
+
+  .answers-table th {
+    background: #333 !important;
+    color: #fff !important;
+    padding: 8px !important;
+    font-size: 9pt !important;
+  }
+
+  .answers-table td {
+    padding: 6px 8px !important;
+    border: 1px solid #ccc !important;
+    font-size: 9pt !important;
+  }
+
+  .sector-icon {
+    font-size: 14pt !important;
+  }
+
+  .sector-name {
+    color: #000 !important;
+  }
+
+  .code-cell code {
+    background: #c00 !important;
+    color: #fff !important;
+    padding: 3px 8px !important;
+    font-size: 10pt !important;
+  }
+
+  .challenge-cell {
+    color: #006 !important;
+  }
+
+  .hint-cell {
+    color: #666 !important;
+    font-size: 8pt !important;
+  }
+
+  .quick-reference {
+    background: #f5f5f5 !important;
+    border: 2px solid #006 !important;
+    padding: 15px !important;
+    margin-bottom: 15px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .quick-reference h2 {
+    color: #006 !important;
+    font-size: 12pt !important;
+    margin-bottom: 10px !important;
+  }
+
+  .codes-grid {
+    gap: 8px !important;
+  }
+
+  .code-item {
+    background: #eee !important;
+    padding: 6px !important;
+    border-left: 3px solid #c00 !important;
+  }
+
+  .code-item code {
+    background: #c00 !important;
+    font-size: 9pt !important;
+  }
+
+  .tools-reference {
+    background: #f5f5f5 !important;
+    border: 1px solid #999 !important;
+    padding: 10px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .tools-reference h2 {
+    color: #333 !important;
+    font-size: 11pt !important;
+    margin-bottom: 10px !important;
+  }
+
+  .tools-grid {
+    gap: 8px !important;
+  }
+
+  .tool-item {
+    background: #eee !important;
+    padding: 6px !important;
+  }
+
+  .tool-item strong {
+    color: #006 !important;
+    font-size: 9pt !important;
+  }
+
+  .tool-item span {
+    color: #333 !important;
+    font-size: 8pt !important;
+  }
+
+  .footer-note {
+    padding: 10px !important;
+  }
+
+  .footer-note p {
+    color: #666 !important;
+    font-size: 9pt !important;
+  }
+}
+
+@page {
+  size: letter;
+  margin: 0.25in;
+}
+
