@@ -37,7 +37,35 @@ html:has(.intel-page) #root {
 
 .intel-header p {
   color: #a0a0a0;
-  margin: 0 0 20px 0;
+  margin: 0 0 15px 0;
+}
+
+/* Challenge type tags */
+.challenge-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.challenge-tag {
+  background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+  color: #4ecdc4;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border: 1px solid #4ecdc4;
+}
+
+.challenge-badge {
+  background: #0f3460;
+  color: #4ecdc4;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
 .header-actions {
@@ -113,28 +141,49 @@ html:has(.intel-page) #root {
 
 .answer-item {
   background: #1a1a2e;
-  padding: 10px 15px;
+  padding: 12px 15px;
   border-radius: 6px;
   border-left: 4px solid #e94560;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.answer-item strong {
-  color: #4ecdc4;
+.answer-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
-.answer-item code {
-  background: #0f3460;
+.answer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.answer-details strong {
   color: #4ecdc4;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 8px;
   font-size: 0.9rem;
 }
 
-.answer-item .hint-text {
-  color: #666;
-  font-size: 0.85rem;
-  margin-left: 8px;
+.answer-details code {
+  background: #e94560;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.answer-details .challenge-type {
+  color: #4ecdc4;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.answer-details .hint-text {
+  color: #888;
+  font-size: 0.75rem;
 }
 
 /* Document Grid */
@@ -320,6 +369,13 @@ html:has(.intel-page) #root {
   color: #e94560;
   font-weight: bold;
   font-size: 1.2rem;
+  margin: 0 0 8px 0;
+}
+
+.intel-footer .footer-sub {
+  color: #4ecdc4;
+  font-size: 0.9rem;
+  font-weight: normal;
 }
 
 /* Print Styles - Optimized for 8.5x11 US Letter - FULL PAGE */

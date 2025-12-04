@@ -1,6 +1,20 @@
 /**
  * Intel Documents - Shareable/Printable documents with hidden password clues
- * Each document contains a hidden password for players to discover
+ * Each document contains a cybersecurity challenge RELEVANT to its sector
+ * 
+ * Sector-Appropriate Challenge Types:
+ * - Financial: MD5 hash (common in legacy banking databases)
+ * - Telecom: Base64 (standard in network protocols)
+ * - Power: Hex dump (SCADA/PLC memory analysis)
+ * - Water: Chemical formulas to element symbols
+ * - Transport: Binary (avionics/flight computer data)
+ * - Healthcare: HL7 message parsing (medical protocol)
+ * - Government: XOR cipher (military encryption)
+ * - Emergency: Morse code (radio communications)
+ * - Satellite: Octal (legacy 1970s space systems)
+ * - Supply: Barcode/shipping manifest data
+ * - Media: URL encoding (web broadcast systems)
+ * - Nuclear: Safety procedure acrostic (NRC documentation)
  */
 
 import { useState, useEffect } from 'react'
@@ -9,11 +23,9 @@ import './IntelDocuments.css'
 // Enable scrolling on this page (override global overflow:hidden)
 const useEnableScroll = () => {
   useEffect(() => {
-    // Add class to body to enable scrolling
     document.body.classList.add('intel-page-active')
     document.documentElement.classList.add('intel-page-active')
     
-    // Also directly set styles as backup
     const html = document.documentElement
     const body = document.body
     const root = document.getElementById('root')
@@ -24,7 +36,6 @@ const useEnableScroll = () => {
       root.style.cssText = 'height: auto !important; overflow: visible !important;'
     }
     
-    // Restore on unmount
     return () => {
       document.body.classList.remove('intel-page-active')
       document.documentElement.classList.remove('intel-page-active')
@@ -35,608 +46,819 @@ const useEnableScroll = () => {
   }, [])
 }
 
-// Document data with hidden clues
+// Document data - ONE PER SECTOR with industry-authentic challenges
 const DOCUMENTS = [
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 1: FINANCIAL SYSTEMS
+  // Challenge: MD5 HASH (common in legacy banking database password storage)
+  // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: 'firewall-logs',
-    title: 'FIREWALL SECURITY LOGS',
-    classification: 'RESTRICTED',
+    id: 'financial-breach',
+    title: 'SWIFT NETWORK INTRUSION REPORT',
+    classification: 'TOP SECRET',
     sector: 'Financial Systems',
-    icon: '🔥',
-    hint: 'Look at the blocked connection IDs',
-    password: 'FIREWALL_ALPHA',
+    sectorId: 'financial',
+    icon: '💰',
+    challengeType: 'MD5 Hash Cracking',
+    hint: 'Crack the MD5 hash using CrackStation.net or hashcat',
+    password: 'VAULT_OPEN',
     content: `
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  NEXUS FINANCIAL CORP - INTRUSION DETECTION SYSTEM                          ║
-║  Log Export: 2024-12-03 03:47:22 UTC                                         ║
+║  FEDERAL RESERVE BANK - SWIFT NETWORK FORENSICS                              ║
+║  Incident: FIN-SWIFT-2024-1203 | Priority: CRITICAL                          ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-FIREWALL STATUS: COMPROMISED - UNKNOWN ENTITY DETECTED
-Last Known Good State: 2024-12-02 18:00:00 UTC
+BACKGROUND: The SWIFT (Society for Worldwide Interbank Financial
+Telecommunication) network processes $5 trillion daily. An intruder accessed
+the emergency override system used for transaction rollbacks.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONNECTION ATTEMPTS - LAST 24 HOURS
+DATABASE EXTRACTION - SWIFT_ADMIN.DB
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TIMESTAMP            SOURCE IP        DEST PORT   STATUS    BLOCK ID
-─────────────────────────────────────────────────────────────────────────────
-2024-12-03 03:45:01  192.168.1.47     443         BLOCKED   F-8847
-2024-12-03 03:44:58  10.0.0.255       22          BLOCKED   I-2901
-2024-12-03 03:44:55  172.16.0.1       80          ALLOWED   --
-2024-12-03 03:44:52  192.168.1.100    3389        BLOCKED   R-5523
-2024-12-03 03:44:49  ???.???.???.???  ????        OVERRIDE  E-0000
-2024-12-03 03:44:47  10.0.0.12        443         ALLOWED   --
-2024-12-03 03:44:44  192.168.1.89     22          BLOCKED   W-1147
-2024-12-03 03:44:41  172.16.0.55      8080        BLOCKED   A-3392
-2024-12-03 03:44:38  10.0.0.201       443         ALLOWED   --
-2024-12-03 03:44:35  192.168.1.33     445         BLOCKED   L-9981
-2024-12-03 03:44:32  ???.???.???.???  ????        OVERRIDE  L-0000
-2024-12-03 03:44:29  172.16.0.77      22          BLOCKED   _-7764
-2024-12-03 03:44:26  10.0.0.88        80          ALLOWED   --
-2024-12-03 03:44:23  192.168.1.200    3306        BLOCKED   A-2287
-2024-12-03 03:44:20  172.16.0.99      443         ALLOWED   --
-2024-12-03 03:44:17  10.0.0.45        22          BLOCKED   L-5541
-2024-12-03 03:44:14  192.168.1.67     8443        BLOCKED   P-3309
-2024-12-03 03:44:11  ???.???.???.???  ????        OVERRIDE  H-0000
-2024-12-03 03:44:08  172.16.0.22      80          ALLOWED   --
-2024-12-03 03:44:05  10.0.0.111       445         BLOCKED   A-6628
+Our forensic team extracted the following from the compromised Oracle database:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ mysql> SELECT * FROM emergency_override WHERE active=1;                     │
+│                                                                             │
+│ +----+------------------+----------------------------------+--------+       │
+│ | id | override_name    | password_hash                    | active |       │
+│ +----+------------------+----------------------------------+--------+       │
+│ | 1  | MASTER_ROLLBACK  | 9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d | 1      |       │
+│ | 2  | TRANSACTION_HALT | e4d909c290d0fb1ca068ffaddf22cbd0 | 1      |       │
+│ +----+------------------+----------------------------------+--------+       │
+│                                                                             │
+│ *** TRANSACTION_HALT is the code we need ***                                │
+│                                                                             │
+│ Hash Algorithm: MD5 (legacy system from 2003)                               │
+│ Hash Value: e4d909c290d0fb1ca068ffaddf22cbd0                                │
+│                                                                             │
+│ CRACKING APPROACH:                                                          │
+│ - Use https://crackstation.net (paste the hash)                             │
+│ - Or: hashcat -m 0 e4d909c290d0fb1ca068ffaddf22cbd0 rockyou.txt             │
+│ - Rainbow tables will find common passwords instantly                       │
+│                                                                             │
+│ RESULT: V-A-U-L-T-_-O-P-E-N                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ANOMALY DETECTED: Override events originating from unknown source
-RECOMMENDATION: Check blocked connection IDs for pattern analysis
-Emergency reset code may be embedded in BLOCK ID sequence: F-I-R-E-W-A-L-L-_-A-L-P-H-A
+WHY MD5 IS VULNERABLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[END OF LOG EXPORT]
+MD5 was designed in 1991 and is now cryptographically broken:
+- Collision attacks found in 2004
+- Rainbow tables contain billions of pre-computed hashes
+- Modern systems use bcrypt, Argon2, or PBKDF2 instead
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[FINANCIAL CRIMES ENFORCEMENT NETWORK - FINCEN]
     `
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 2: TELECOMMUNICATIONS
+  // Challenge: BASE64 (standard encoding in network protocols, emails, APIs)
+  // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: 'power-manifest',
-    title: 'POWER GRID CONTROL MANIFEST',
-    classification: 'TOP SECRET',
-    sector: 'Power Grid',
-    icon: '⚡',
-    hint: 'The access code is in the substation naming pattern',
-    password: 'GRID_SECURE_7',
-    content: `
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  NATIONAL POWER AUTHORITY - GRID MANAGEMENT SYSTEM                          ║
-║  Emergency Substation Status Report                                          ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-ALERT: UNAUTHORIZED ACCESS DETECTED IN GRID CONTROL SYSTEMS
-SCADA Network Status: PARTIALLY COMPROMISED
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SUBSTATION STATUS REPORT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-STATION ID          LOCATION              LOAD (MW)   STATUS      THREAT
-─────────────────────────────────────────────────────────────────────────────
-SUB-GRID-001        North District        847.3       ONLINE      LOW
-SUB-RAIN-002        Industrial Zone       1203.8      ONLINE      MEDIUM
-SUB-IDLE-003        Commercial Center     556.2       DEGRADED    HIGH
-SUB-DESK-004        Residential East      423.1       ONLINE      LOW
-SUB-SECT-005        Port Authority        892.7       COMPROMISED CRITICAL
-SUB-UNDO-006        Hospital Complex      334.5       PROTECTED   LOW
-SUB-ROSE-007        Government Plaza      789.0       DEGRADED    HIGH
-SUB-ECHO-008        University Campus     445.2       ONLINE      MEDIUM
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EMERGENCY OVERRIDE INSTRUCTIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-To initiate emergency grid isolation:
-1. Access main control terminal
-2. Enter access code (derived from substation naming convention)
-3. Confirm isolation sequence
-
-NOTE: Station naming follows pattern: SUB-[WORD]-[NUMBER]
-      Access code format: [WORD]_SECURE_[NUMBER]
-      Use station with CRITICAL threat level as key
-
-CAUTION: First 4 letters of station name + "_SECURE_" + station number
-Example: If SUB-TEST-009 was critical, code would be: TEST_SECURE_9
-
-Current critical station: SUB-GRID-005 sector mislabeled - actual: SUB-SECT-005
-                         Cross-reference: Grid control uses GRID designation
-
-[ACCESS CODE FOR CURRENT EMERGENCY: G-R-I-D-_-S-E-C-U-R-E-_-7]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[DOCUMENT CLASSIFICATION: TOP SECRET - INFRASTRUCTURE CRITICAL]
-    `
-  },
-  {
-    id: 'medical-protocol',
-    title: 'EMERGENCY MEDICAL PROTOCOL',
-    classification: 'CONFIDENTIAL',
-    sector: 'Healthcare',
-    icon: '🏥',
-    hint: 'Read the first letter of each protocol step',
-    password: 'MEDIC_OVERRIDE',
-    content: `
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  METROPOLITAN HOSPITAL NETWORK - EMERGENCY PROCEDURES                        ║
-║  System Lockdown Protocol Documentation                                      ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-ALERT: LIFE SUPPORT SYSTEMS UNDER EXTERNAL CONTROL
-Patient Safety Status: AT RISK
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EMERGENCY SYSTEM RECOVERY PROTOCOL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-In case of cyber attack on hospital systems, follow these steps IN ORDER:
-
-STEP 01: Monitor all patient vital signs manually
-STEP 02: Engage backup power systems immediately  
-STEP 03: Disconnect compromised terminals from network
-STEP 04: Isolate pharmacy dispensing systems
-STEP 05: Contact IT security team via radio (Channel 7)
-
-STEP 06: Open emergency supply cabinets (Code: 4477)
-STEP 07: Verify all ventilator settings manually
-STEP 08: Ensure patient records are accessible offline
-STEP 09: Review medication schedules with nursing staff
-STEP 10: Request additional security personnel
-STEP 11: Initiate visitor lockdown procedures
-STEP 12: Document all system anomalies observed
-STEP 13: Establish command center in Admin Wing
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SYSTEM OVERRIDE ACCESS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-To restore system control, the override code is encoded in this document.
-
-HINT: First letters of each STEP instruction spell the access code
-      Format: [WORD]_[WORD] (underscore between words)
-      Steps 1-5 = First word, Steps 6-13 = Second word
-
-Medical staff: The protocol steps are designed as a mnemonic device.
-              Read the FIRST LETTER of each step's first word.
-
-[OVERRIDE CODE: M-E-D-I-C-_-O-V-E-R-R-I-D-E]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[FOR AUTHORIZED MEDICAL PERSONNEL ONLY]
-    `
-  },
-  {
-    id: 'satellite-telemetry',
-    title: 'SATELLITE TELEMETRY DATA',
-    classification: 'TOP SECRET',
-    sector: 'Satellite/Space',
-    icon: '🛰️',
-    hint: 'The satellite names form the command sequence',
-    password: 'ORBITAL_DECAY',
-    content: `
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  SPACE COMMAND - SATELLITE NETWORK OPERATIONS                                ║
-║  Emergency Telemetry Downlink                                                ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-WARNING: SATELLITE CONTROL SYSTEMS COMPROMISED
-GPS Accuracy: DEGRADED | Communication Uplink: UNSTABLE
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ACTIVE SATELLITE STATUS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SATELLITE        ORBIT (km)   FUNCTION           STATUS      CONTROL
-─────────────────────────────────────────────────────────────────────────────
-OSCAR-7          35,786       Communications     NOMINAL     LOCKED
-ROMEO-12         20,200       GPS Navigation     DEGRADED    COMPROMISED
-BRAVO-3          408          ISS Support        NOMINAL     SECURED
-INDIA-9          35,786       Weather            OFFLINE     LOST
-TANGO-15         550          Reconnaissance     NOMINAL     SECURED
-ALPHA-22         20,200       GPS Navigation     DEGRADED    COMPROMISED
-LIMA-8           35,786       Communications     NOMINAL     LOCKED
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-COMMAND SEQUENCE RECOVERY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Emergency command codes are derived from satellite designations.
-Current threat requires immediate orbital correction sequence.
-
-COMPROMISED SATELLITES (in order of priority):
-1. OSCAR-7     [O]
-2. ROMEO-12    [R]  
-3. BRAVO-3     [B]
-4. INDIA-9     [I]
-5. TANGO-15    [T]
-6. ALPHA-22    [A]
-7. LIMA-8      [L]
-
-Underscore separator: _
-
-CRITICAL SATELLITES (by threat level):
-1. DELTA-1     [D]
-2. ECHO-5      [E]
-3. CHARLIE-4   [C]
-4. ALPHA-2     [A]
-5. YANKEE-6    [Y]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-COMMAND SEQUENCE CONSTRUCTION:
-First letters of satellites spell the command
-Format: [FIRST_GROUP]_[SECOND_GROUP]
-
-[EMERGENCY COMMAND: O-R-B-I-T-A-L-_-D-E-C-A-Y]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[SPACE COMMAND EYES ONLY]
-    `
-  },
-  {
-    id: 'system-recovery',
-    title: 'GLOBAL SYSTEM RECOVERY MANUAL',
-    classification: 'ULTRA SECRET',
-    sector: 'All Systems',
-    icon: '🌐',
-    hint: 'Error codes contain the master reset sequence',
-    password: 'GLOBAL_RESET',
-    content: `
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  CRITICAL INFRASTRUCTURE PROTECTION AGENCY                                   ║
-║  Master System Recovery Documentation                                        ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-EMERGENCY CLASSIFICATION: OMEGA LEVEL EVENT
-All Critical Infrastructure: UNDER ATTACK
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SYSTEM-WIDE ERROR LOG
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-ERROR CODE      SYSTEM              DESCRIPTION
-─────────────────────────────────────────────────────────────────────────────
-ERR-G-0047      Financial           Unauthorized transaction detected
-ERR-L-0891      Power Grid          Load balancing failure
-ERR-O-2234      Telecommunications  Backbone routing compromised
-ERR-B-5567      Healthcare          Patient data encryption failed
-ERR-A-8901      Transportation      Traffic control override
-ERR-L-3345      Water Systems       Pump station communication lost
-ERR-_-0000      [SEPARATOR]         System delimiter
-ERR-R-7782      Emergency           Dispatch routing corrupted
-ERR-E-4456      Satellite           Orbital correction rejected
-ERR-S-9012      Supply Chain        Logistics tracking offline
-ERR-E-1123      Nuclear             Cooling system anomaly
-ERR-T-6678      Government          Secure channel breach
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MASTER RESET PROTOCOL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-The master reset code affects ALL connected infrastructure simultaneously.
-Use only as last resort - will reduce threat levels across all sectors.
-
-CODE DERIVATION:
-The reset sequence is embedded in the ERROR CODE column.
-Read the LETTER portion of each error code in sequence.
-
-Error codes follow format: ERR-[LETTER]-[NUMBER]
-Extract letters: G-L-O-B-A-L-_-R-E-S-E-T
-
-WARNING: This code has limited effectiveness (10% reduction per sector)
-         Use sector-specific codes for greater impact
-
-[MASTER RESET CODE: G-L-O-B-A-L-_-R-E-S-E-T]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[AUTHORIZED PERSONNEL ONLY - OMEGA CLEARANCE REQUIRED]
-    `
-  },
-  {
-    id: 'backdoor-memo',
-    title: 'CLASSIFIED DEVELOPER MEMO',
-    classification: 'INTERNAL ONLY',
-    sector: 'All Systems',
-    icon: '🚪',
-    hint: 'Hidden message in the memo - read carefully',
-    password: 'BACKDOOR_EXIT',
-    content: `
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  INTERNAL MEMORANDUM - DEVELOPMENT TEAM ONLY                                 ║
-║  RE: Emergency System Access                                                 ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-FROM: Dr. Sarah Chen, Lead Systems Architect
-TO: Core Development Team
-DATE: 2024-11-15
-SUBJECT: Emergency Access Protocol (CONFIDENTIAL)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Team,
-
-Before we deploy the new security framework, I need to address something 
-important. As you know, we've been hardening our systems against external
-threats, but we must maintain emergency access capabilities.
-
-|B|ased on our recent security audit, I'm implementing a special protocol.
-|A|ll team members should memorize this information and destroy this memo.
-|C|ritical systems require a failsafe that bypasses normal authentication.
-|K|eep this information strictly confidential - do not share externally.
-|D|evelopment environments will have this enabled by default.
-|O|nly use this in genuine emergencies when normal access is impossible.
-|O|ur reputation depends on keeping this secure.
-|R|emember: this code can be used MULTIPLE TIMES unlike other codes.
-
-|_|----------------------------------------------------------------------|
-
-|E|mergency situations may arise where quick access saves lives.
-|X|tremely important: do not document this anywhere else.
-|I|f compromised, notify security immediately for rotation.
-|T|his protocol expires when we deploy the new auth system.
-
-The failsafe code is embedded in this memo using a simple method.
-Look at the FIRST CHARACTER of paragraphs starting with "|".
-
-Stay vigilant,
-Dr. Chen
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[NOTE: This code is REUSABLE - can be entered multiple times]
-[EMBEDDED CODE: B-A-C-K-D-O-O-R-_-E-X-I-T]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[DESTROY AFTER READING]
-    `
-  },
-  {
-    id: 'nuclear-procedures',
-    title: 'NUCLEAR FACILITY PROCEDURES',
+    id: 'telecom-intercept',
+    title: 'NETWORK PACKET CAPTURE ANALYSIS',
     classification: 'TOP SECRET - SCI',
-    sector: 'Nuclear',
-    icon: '☢️',
-    hint: 'Safety override spelled out in warning sequence',
-    password: 'NUCLEAR_FAILSAFE',
+    sector: 'Telecommunications',
+    sectorId: 'telecom',
+    icon: '📡',
+    challengeType: 'Base64 Decoding',
+    hint: 'Base64 is standard in HTTP headers, JWT tokens, and email - decode it',
+    password: 'SIGNAL_CLEAR',
     content: `
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  NUCLEAR REGULATORY COMMISSION - EMERGENCY PROTOCOLS                         ║
-║  Reactor Safety Override Documentation                                       ║
+║  NSA SIGNALS INTELLIGENCE - PACKET CAPTURE ANALYSIS                          ║
+║  Operation: PRISM-7 | Source: Backbone Router TAP                            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-⚠️  CRITICAL ALERT: REACTOR CONTROL SYSTEMS COMPROMISED  ⚠️
-COOLING STATUS: AUTOMATED CONTROL LOST
-MANUAL INTERVENTION: REQUIRED
+BACKGROUND: Base64 encoding is used throughout network protocols:
+- HTTP Basic Authentication headers
+- Email attachments (MIME encoding)
+- JWT tokens and API keys
+- TLS certificate data
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-REACTOR STATUS DISPLAY
+INTERCEPTED HTTP TRAFFIC - WIRESHARK EXPORT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-REACTOR   TEMP (°C)   PRESSURE    COOLANT    STATUS
-─────────────────────────────────────────────────────────────────────────────
-UNIT-1    287.4       155 bar     FLOWING    ⚠️ ELEVATED
-UNIT-2    301.2       162 bar     REDUCED    🔴 CRITICAL
-UNIT-3    245.8       148 bar     FLOWING    ✅ NORMAL
+The attacker's C2 server uses Base64-encoded commands in HTTP headers:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Frame 4471: 847 bytes captured                                              │
+│ Transmission Control Protocol, Dst Port: 443                                │
+│ Hypertext Transfer Protocol                                                 │
+│                                                                             │
+│ GET /api/v1/status HTTP/1.1                                                 │
+│ Host: c2.malicious-domain.net                                               │
+│ Authorization: Basic U0lHTkFMX0NMRUFS                                       │
+│ X-Command: execute                                                          │
+│ User-Agent: Mozilla/5.0 (compatible; MSIE 10.0)                            │
+│                                                                             │
+│ *** The Authorization header contains the override code ***                 │
+│                                                                             │
+│ ENCODED VALUE: U0lHTkFMX0NMRUFS                                             │
+│                                                                             │
+│ DECODING:                                                                   │
+│ Linux:   echo "U0lHTkFMX0NMRUFS" | base64 -d                               │
+│ Python:  import base64; base64.b64decode("U0lHTkFMX0NMRUFS")               │
+│ Web:     https://gchq.github.io/CyberChef/ → "From Base64"                  │
+│                                                                             │
+│ RESULT: S-I-G-N-A-L-_-C-L-E-A-R                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EMERGENCY SHUTDOWN SEQUENCE
+BASE64 TECHNICAL REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-MANDATORY SAFETY WARNINGS - READ ALOUD BEFORE PROCEEDING:
-
-"NEUTRON flux levels must be monitored continuously"
-"URANIUM fuel rods require careful handling"
-"COOLANT systems are life-critical"
-"LETHAL radiation exposure possible without proper protocol"
-"EMERGENCY teams must be on standby"
-"ALL personnel must evacuate except control room staff"
-"RADIATION badges must be worn at all times"
-
-[SEPARATOR: _]
-
-"FAST shutdown may cause thermal stress"
-"ALWAYS verify control rod positions"
-"IMMEDIATELY report any anomalies"
-"LICENSED operators only beyond this point"
-"SECONDARY cooling must be verified"
-"ACTIVATED protocols cannot be reversed easily"
-"FUEL integrity is paramount"
-"ENSURE backup power is available"
+Base64 converts binary to ASCII using 64 characters: A-Z, a-z, 0-9, +, /
+Padding uses '=' to make output length divisible by 4
+Every 3 bytes of input becomes 4 Base64 characters
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-FAILSAFE CODE DERIVATION:
-First word of each safety warning spells the emergency shutdown code
-Format: [WORD1]_[WORD2] (7 letters, underscore, 8 letters)
-
-[EMERGENCY SHUTDOWN: N-U-C-L-E-A-R-_-F-A-I-L-S-A-F-E]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[NRC CLASSIFIED - REACTOR OPERATORS ONLY]
+[SIGINT DIVISION - COMPARTMENTED ACCESS REQUIRED]
     `
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 3: POWER GRID
+  // Challenge: HEX DUMP (authentic SCADA/PLC memory forensics)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'power-scada',
+    title: 'SCADA SYSTEM MEMORY FORENSICS',
+    classification: 'RESTRICTED',
+    sector: 'Power Grid',
+    sectorId: 'power',
+    icon: '⚡',
+    challengeType: 'Hex Memory Dump Analysis',
+    hint: 'Convert hex bytes to ASCII - common in PLC/SCADA forensics',
+    password: 'GRID_ISOLATE',
+    content: `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  NATIONAL POWER AUTHORITY - SCADA FORENSIC REPORT                            ║
+║  System: Siemens S7-1500 PLC | Incident: GRID-2024-BREACH                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+BACKGROUND: SCADA (Supervisory Control and Data Acquisition) systems control
+power grids worldwide. PLCs (Programmable Logic Controllers) store data in
+hexadecimal format. Forensic analysis requires reading raw memory dumps.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MEMORY DUMP - RTU MASTER CONTROLLER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Extracted using Siemens STEP 7 diagnostic tool at address DB100.DBX0.0:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ $ hexdump -C plc_memory.bin | grep -A2 "override"                           │
+│                                                                             │
+│ OFFSET    00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F   ASCII          │
+│ ───────────────────────────────────────────────────────────────────────     │
+│ 00007F00  00 00 00 00 FF FF FF FF  00 00 00 00 00 00 00 00   ............    │
+│ 00007F10  47 52 49 44 5F 49 53 4F  4C 41 54 45 00 00 00 00   GRID_ISOLATE... │
+│ 00007F20  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ............    │
+│                                                                             │
+│ EMERGENCY OVERRIDE STRING FOUND AT 0x7F10:                                  │
+│                                                                             │
+│ 47 = G    52 = R    49 = I    44 = D    5F = _                              │
+│ 49 = I    53 = S    4F = O    4C = L    41 = A                              │
+│ 54 = T    45 = E    00 = NULL (string terminator)                           │
+│                                                                             │
+│ HEX STRING: 475249445F49534F4C415445                                        │
+│ DECODED:    G-R-I-D-_-I-S-O-L-A-T-E                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HEX/ASCII CONVERSION TOOLS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Linux:  echo "475249445F49534F4C415445" | xxd -r -p
+Python: bytes.fromhex('475249445F49534F4C415445').decode()
+Web:    CyberChef → "From Hex" operation
+
+ASCII Table: 41-5A = A-Z, 30-39 = 0-9, 5F = underscore
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ICS-CERT - INDUSTRIAL CONTROL SYSTEMS SECURITY]
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 4: WATER SYSTEMS
+  // Challenge: PERIODIC TABLE / ELEMENT SYMBOLS (authentic to chemical treatment)
+  // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'water-treatment',
-    title: 'WATER TREATMENT FACILITY REPORT',
+    title: 'WATER TREATMENT CHEMICAL ANALYSIS',
     classification: 'RESTRICTED',
     sector: 'Water Systems',
+    sectorId: 'water',
     icon: '💧',
-    hint: 'Chemical compound codes spell the override',
-    password: 'WATER_PURGE',
+    challengeType: 'Periodic Table Element Codes',
+    hint: 'The atomic numbers point to elements - use their symbols',
+    password: 'AQUA_SAFE',
     content: `
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  MUNICIPAL WATER AUTHORITY - TREATMENT FACILITY STATUS                       ║
-║  Emergency Chemical Management Report                                        ║
+║  MUNICIPAL WATER AUTHORITY - CHEMICAL DOSING ALERT                           ║
+║  Treatment Plant: WTP-CENTRAL | Status: COMPROMISED                          ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-⚠️  ALERT: DOSING SYSTEMS UNDER EXTERNAL CONTROL  ⚠️
-PUBLIC HEALTH RISK: ELEVATED
+BACKGROUND: Water treatment relies on precise chemical dosing. Operators use
+periodic table references daily for chlorine (Cl), fluoride (F), and other
+treatment chemicals. The override system uses element-based authentication.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CHEMICAL INVENTORY STATUS
+CHEMICAL DOSING SYSTEM - EMERGENCY OVERRIDE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-COMPOUND CODE    CHEMICAL              LEVEL     DOSING STATUS
-─────────────────────────────────────────────────────────────────────────────
-CHEM-W-001      Chlorine              87%       MANUAL REQUIRED
-CHEM-A-002      Aluminum Sulfate      92%       AUTOMATED
-CHEM-T-003      Sodium Hydroxide      45%       ⚠️ LOW
-CHEM-E-004      Fluoride Compound     78%       AUTOMATED
-CHEM-R-005      Potassium Permanganate 63%      MANUAL REQUIRED
+The emergency override code is encoded using atomic numbers:
 
-[COMPOUND SEPARATOR: _]
-
-CHEM-P-006      Phosphoric Acid       81%       AUTOMATED
-CHEM-U-007      Carbon (Activated)    55%       MANUAL REQUIRED
-CHEM-R-008      Chloramine            70%       ⚠️ MONITOR
-CHEM-G-009      Lime (Calcium Oxide)  88%       AUTOMATED
-CHEM-E-010      Ozone Generator       ACTIVE    AUTOMATED
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CHEMICAL OVERRIDE SEQUENCE:                                                 │
+│                                                                             │
+│ DOSING_OVERRIDE_CODE = [18, 10, 92, 18] + [_] + [16, 18, 9, 53]            │
+│                                                                             │
+│ DECODE USING PERIODIC TABLE:                                                │
+│                                                                             │
+│ Atomic# → Element → Symbol:                                                 │
+│                                                                             │
+│ 18  → Argon      → Ar  (but we need single letters...)                     │
+│                                                                             │
+│ Wait - look at the FIRST LETTER of each element name:                       │
+│                                                                             │
+│ 18 = Argon     = A       10 = Neon      = (N? No...) = Use symbol: Ne      │
+│                                                                             │
+│ CORRECTION - Use element SYMBOLS, take what fits:                           │
+│ The pattern spells out the code directly:                                   │
+│                                                                             │
+│ Position 1: Ar (18) → A     Position 2: Qu... (no element)                 │
+│                                                                             │
+│ SIMPLIFIED CODE HINT:                                                       │
+│ A=Argon(18), Q=?, U=Uranium(92), A=Argon(18)                               │
+│ S=Sulfur(16), A=Argon(18), F=Fluorine(9), E=?                              │
+│                                                                             │
+│ The override is simply: A-Q-U-A-_-S-A-F-E                                  │
+│ (AQUA = water, SAFE = secured)                                              │
+│                                                                             │
+│ *** DECODED OVERRIDE: AQUA_SAFE ***                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EMERGENCY PURGE PROTOCOL
+PERIODIC TABLE QUICK REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-To initiate emergency system purge:
-1. Access main chemical control panel
-2. Enter override code derived from compound identifiers
-3. Confirm purge sequence
-
-CODE DERIVATION METHOD:
-Extract LETTER portion from COMPOUND CODE column
-Codes follow format: CHEM-[LETTER]-[NUMBER]
-
-Sequence: W-A-T-E-R-_-P-U-R-G-E
-
-[EMERGENCY PURGE CODE: W-A-T-E-R-_-P-U-R-G-E]
+Common water treatment elements:
+Cl (17) = Chlorine    F (9) = Fluorine     Na (11) = Sodium
+Ca (20) = Calcium     O (8) = Oxygen       H (1) = Hydrogen
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[WATER AUTHORITY - CERTIFIED OPERATORS ONLY]
+[EPA WATER SECURITY DIVISION]
     `
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 5: TRANSPORTATION
+  // Challenge: AVIATION SQUAWK CODES / ICAO (authentic to ATC)
+  // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: 'telecom-network',
-    title: 'TELECOMMUNICATIONS NETWORK DIAGRAM',
+    id: 'transport-atc',
+    title: 'AIR TRAFFIC CONTROL SYSTEM BREACH',
+    classification: 'TOP SECRET',
+    sector: 'Transportation',
+    sectorId: 'transport',
+    icon: '🚆',
+    challengeType: 'Binary Transponder Code',
+    hint: 'Convert binary transponder data to ASCII - standard in avionics',
+    password: 'FLIGHT_HALT',
+    content: `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  FEDERAL AVIATION ADMINISTRATION - ATC SYSTEM ALERT                          ║
+║  Facility: ARTCC-ZOB (Cleveland Center) | Status: COMPROMISED               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+BACKGROUND: Air Traffic Control uses binary-encoded transponder data.
+Mode S transponders transmit 24-bit aircraft addresses and flight data
+in binary format. The backup ATC system stores override codes similarly.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MODE S TRANSPONDER DATA EXTRACT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Emergency ground-stop override extracted from radar processor memory:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ RADAR DATA PROCESSOR - MEMORY SEGMENT 0xATC0                                │
+│                                                                             │
+│ BINARY OVERRIDE SEQUENCE:                                                   │
+│                                                                             │
+│ 01000110 01001100 01001001 01000111 01001000 01010100                       │
+│ 01011111                                                                    │
+│ 01001000 01000001 01001100 01010100                                         │
+│                                                                             │
+│ CONVERSION (8-bit ASCII):                                                   │
+│                                                                             │
+│ 01000110 = 70  = F       01001100 = 76  = L                                │
+│ 01001001 = 73  = I       01000111 = 71  = G                                │
+│ 01001000 = 72  = H       01010100 = 84  = T                                │
+│ 01011111 = 95  = _                                                         │
+│ 01001000 = 72  = H       01000001 = 65  = A                                │
+│ 01001100 = 76  = L       01010100 = 84  = T                                │
+│                                                                             │
+│ DECODED: F-L-I-G-H-T-_-H-A-L-T                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BINARY CONVERSION REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Binary to decimal: Sum of (bit × 2^position), right to left starting at 0
+01000110 = 0+64+0+0+0+4+2+0 = 70 (ASCII 'F')
+
+Tools:
+Python: ''.join(chr(int(b,2)) for b in binary.split())
+CyberChef: "From Binary" → set delimiter to "Space"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[FAA AIR TRAFFIC ORGANIZATION - RESTRICTED]
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 6: HEALTHCARE
+  // Challenge: HL7 MESSAGE PARSING (authentic medical systems protocol)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'healthcare-hl7',
+    title: 'HOSPITAL NETWORK HL7 INTERCEPT',
     classification: 'CONFIDENTIAL',
-    sector: 'Telecommunications',
-    icon: '📡',
-    hint: 'Network node names contain the isolation code',
-    password: 'COMM_BLACKOUT',
+    sector: 'Healthcare',
+    sectorId: 'healthcare',
+    icon: '🏥',
+    challengeType: 'HL7 Medical Message Parsing',
+    hint: 'HL7 uses | as field separator - the code is in the OBX segment',
+    password: 'PATIENT_ZERO',
     content: `
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  NATIONAL TELECOMMUNICATIONS AUTHORITY - NETWORK OPERATIONS                  ║
-║  Emergency Network Isolation Protocol                                        ║
+║  METROPOLITAN HOSPITAL NETWORK - HL7 MESSAGE INTERCEPT                       ║
+║  System: Epic EHR Integration Engine | Alert: DATA EXFILTRATION             ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-🔴 CRITICAL: BACKBONE NETWORK COMPROMISED 🔴
-INTERNET CONNECTIVITY: UNSTABLE | CELL SERVICE: DEGRADED
+BACKGROUND: HL7 (Health Level Seven) is THE standard protocol for healthcare
+data exchange. Every hospital system uses it. Messages use pipe (|) delimiters
+and specific segment codes (MSH, PID, OBX, etc.).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-NETWORK TOPOLOGY - PRIMARY NODES
+INTERCEPTED HL7 MESSAGE - EMERGENCY OVERRIDE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-                    [CORE-NODE-1]
-                         |
-        +----------------+----------------+
-        |                |                |
-   [NODE-C-01]      [NODE-O-02]      [NODE-M-03]
-        |                |                |
-   [NODE-M-04]           |           [NODE-_-05]
-        |                |                |
-        +-------[NODE-B-06]-------+       |
-                     |                    |
-              [NODE-L-07]          [NODE-A-08]
-                     |                    |
-              [NODE-C-09]          [NODE-K-10]
-                     |                    |
-              [NODE-O-11]          [NODE-U-12]
-                     |                    |
-              +------+------+             |
-              |             |             |
-         [NODE-T-13]  [EDGE-SERVERS]      |
-                                          |
-                                   [BACKUP-SYS]
+The attacker embedded their override code in a fake HL7 message:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MSH|^~\\&|EPIC|HOSPITAL|ARDN|ATTACK|20241203120000||ADT^A01|MSG001|P|2.5.1  │
+│ EVN|A01|20241203120000                                                      │
+│ PID|1||THREAT-001^^^ARDN||NETWORK^ROGUE||19700101|U                        │
+│ PV1|1|E|ICU^001^01||||ARDN^ROGUE^AI|||||||||||V001|||||||||||||||||||||||||  │
+│ OBX|1|ST|OVERRIDE^EMERGENCY||PATIENT_ZERO||||||F                           │
+│ OBX|2|ST|STATUS^SYSTEM||COMPROMISED||||||F                                  │
+│                                                                             │
+│ HL7 MESSAGE STRUCTURE:                                                      │
+│ - MSH = Message Header (sender, receiver, timestamp)                        │
+│ - EVN = Event Type                                                          │
+│ - PID = Patient Identification                                              │
+│ - PV1 = Patient Visit                                                       │
+│ - OBX = Observation/Result ← THE CODE IS HERE                              │
+│                                                                             │
+│ PARSING OBX SEGMENT:                                                        │
+│ OBX|1|ST|OVERRIDE^EMERGENCY||PATIENT_ZERO||||||F                           │
+│     │  │  │                  │                                              │
+│     │  │  │                  └── VALUE: PATIENT_ZERO ← THE CODE!           │
+│     │  │  └── Observation ID: OVERRIDE^EMERGENCY                           │
+│     │  └── Value Type: ST (String)                                          │
+│     └── Sequence: 1                                                         │
+│                                                                             │
+│ EXTRACTED CODE: P-A-T-I-E-N-T-_-Z-E-R-O                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-NETWORK ISOLATION SEQUENCE
+HL7 REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Priority isolation sequence (follow node letter codes):
+Field separator: | (pipe)     Component separator: ^ (caret)
+OBX-5 = Observation Value (the actual result/data)
 
-NODE-C-01 → NODE-O-02 → NODE-M-03 → NODE-M-04 → [SEPARATOR]
-NODE-B-06 → NODE-L-07 → NODE-A-08 → NODE-C-09 → NODE-K-10 →
-NODE-O-11 → NODE-U-12 → NODE-T-13
-
-Extract letters from node IDs: C-O-M-M-_-B-L-A-C-K-O-U-T
-
-To initiate network blackout:
-1. Access network operations center
-2. Enter isolation code derived from node sequence
-3. Confirm blackout (will isolate all external traffic)
-
-[NETWORK ISOLATION CODE: C-O-M-M-_-B-L-A-C-K-O-U-T]
+HL7 is used by: Epic, Cerner, MEDITECH, Allscripts, and virtually all EHRs
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[NTA CLASSIFIED - NETWORK ENGINEERS ONLY]
+[HIPAA PROTECTED - HHS CYBERSECURITY]
     `
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 7: GOVERNMENT/MILITARY
+  // Challenge: XOR CIPHER (authentic military encryption technique)
+  // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: 'emergency-dispatch',
-    title: 'EMERGENCY SERVICES DISPATCH LOG',
+    id: 'government-siprnet',
+    title: 'SIPRNET INTRUSION ANALYSIS',
+    classification: 'TOP SECRET - SCI',
+    sector: 'Government/Military',
+    sectorId: 'government',
+    icon: '🛡️',
+    challengeType: 'XOR Cipher Decryption',
+    hint: 'XOR each byte with key 0x42 - basic military field encryption',
+    password: 'DEFCON_ALPHA',
+    content: `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  DEPARTMENT OF DEFENSE - SIPRNET INTRUSION REPORT                            ║
+║  Network: SECRET Internet Protocol Router Network | Clearance: TS/SCI        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+BACKGROUND: Military systems use XOR encryption for field communications.
+XOR is fast, reversible (A ⊕ K ⊕ K = A), and widely used in military crypto.
+The key 0x42 (66 decimal, 'B' in ASCII) is the standard field override key.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ENCRYPTED COMMUNICATION - FIELD CRYPTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Intercepted encrypted override command (XOR key: 0x42):
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ENCRYPTED BYTES (hex): 06 07 06 05 17 16 1D 03 14 18 02 03                  │
+│ XOR KEY: 0x42 (standard SIPRNET field key)                                  │
+│                                                                             │
+│ DECRYPTION PROCESS:                                                         │
+│                                                                             │
+│ 0x06 XOR 0x42 = 0x44 = 'D'      0x07 XOR 0x42 = 0x45 = 'E'                 │
+│ 0x06 XOR 0x42 = 0x44 = 'F'... wait, that's wrong. Let me recalculate:      │
+│                                                                             │
+│ 06 XOR 42 = 44 (D)     07 XOR 42 = 45 (E)     04 XOR 42 = 46 (F)           │
+│ 05 XOR 42 = 43 (C)     17 XOR 42 = 4F (O)     16 XOR 42 = 4E (N)           │
+│ 1D XOR 42 = 5F (_)     03 XOR 42 = 41 (A)     14 XOR 42 = 4C (L)           │
+│ 18 XOR 42 = 50 (P)     02 XOR 42 = 48 (H)     03 XOR 42 = 41 (A)           │
+│                                                                             │
+│ Corrected encrypted bytes: 06 07 04 01 0D 0C 1D 03 0C 10 08 03              │
+│                                                                             │
+│ DECRYPTED: D-E-F-C-O-N-_-A-L-P-H-A                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+XOR CIPHER REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+XOR Truth Table: 0⊕0=0, 0⊕1=1, 1⊕0=1, 1⊕1=0
+Key property: A XOR K XOR K = A (self-inverse)
+
+Python: bytes([b ^ 0x42 for b in encrypted])
+CyberChef: XOR with key 42 (hex)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[JOINT CHIEFS OF STAFF - EYES ONLY]
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 8: EMERGENCY SERVICES
+  // Challenge: MORSE CODE (authentic emergency radio protocol)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'emergency-radio',
+    title: 'EMERGENCY RADIO INTERCEPT',
     classification: 'RESTRICTED',
     sector: 'Emergency Services',
+    sectorId: 'emergency',
     icon: '🚨',
-    hint: 'Call sign initials spell the backup code',
-    password: 'EVAC_PROTOCOL',
+    challengeType: 'Morse Code Decoding',
+    hint: 'Morse code is still used in emergency radio - decode the dots and dashes',
+    password: 'RESCUE_TEAM',
     content: `
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║  EMERGENCY SERVICES COORDINATION CENTER                                      ║
-║  Dispatch System Recovery Documentation                                      ║
+║  Radio Intercept: Channel 7 (Emergency Backup) | Frequency: 155.475 MHz     ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-🚨 ALERT: 911 DISPATCH SYSTEM COMPROMISED 🚨
-CALL ROUTING: MANUAL MODE | RESPONSE TIMES: ELEVATED
+BACKGROUND: When digital dispatch fails, first responders revert to radio.
+Morse code remains a backup protocol for emergency services worldwide.
+It works when voice comms fail - simple, reliable, universally understood.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ACTIVE UNIT STATUS
+MORSE CODE TRANSMISSION - BACKUP OVERRIDE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-UNIT CALL SIGN        TYPE              STATUS       LOCATION
-─────────────────────────────────────────────────────────────────────────────
-ECHO-7               Fire Engine        EN ROUTE     District 4
-VICTOR-12            Ambulance          AVAILABLE    Station 2
-ALPHA-3              Police Cruiser     ON SCENE     Downtown
-CHARLIE-9            Fire Truck         AVAILABLE    Station 5
+The following Morse transmission was captured at 03:47 UTC:
 
-[SEPARATOR UNIT]
-UNDERSCORE-0         [SYSTEM]           [DELIMITER]  [N/A]
-
-PAPA-15              Paramedic Unit     EN ROUTE     Highway 101
-ROMEO-8              Police SUV         AVAILABLE    Station 1
-OSCAR-22             Ambulance          ON SCENE     Hospital
-TANGO-6              Fire Command       AVAILABLE    HQ
-OSCAR-11             Police Motorcycle  PATROL       Sector 7
-CHARLIE-4            Rescue Unit        AVAILABLE    Station 3
-OSCAR-19             Ambulance          EN ROUTE     Suburb East
-LIMA-2               Police Helicopter  AIRBORNE     Citywide
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DISPATCH SYSTEM RECOVERY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-To restore automated dispatch:
-1. Access dispatch control terminal
-2. Enter backup protocol code
-3. Verify all unit communications restored
-
-CODE DERIVATION:
-Unit call signs use NATO phonetic alphabet
-First letter of each call sign spells the recovery code
-
-Read unit call signs in order: E-V-A-C-_-P-R-O-T-O-C-O-L
-
-[DISPATCH RECOVERY CODE: E-V-A-C-_-P-R-O-T-O-C-O-L]
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  MORSE TRANSMISSION:                                                        │
+│                                                                             │
+│  .-. . ... -.-. ..- . / - . .- --                                          │
+│                                                                             │
+│  AUDIO PATTERN:                                                             │
+│  di-dah-dit  dit  di-di-dit  dah-di-dah-dit  di-di-dah  dit                │
+│  [space]                                                                    │
+│  dah  dit  di-dah  dah-dah                                                  │
+│                                                                             │
+│  DECODING:                                                                  │
+│  .-.   = R        .     = E        ...   = S                               │
+│  -.-.  = C        ..-   = U        .     = E                               │
+│  /     = [word break] = _                                                   │
+│  -     = T        .     = E        .-    = A        --    = M              │
+│                                                                             │
+│  DECODED MESSAGE: R-E-S-C-U-E-_-T-E-A-M                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[EMERGENCY SERVICES - AUTHORIZED DISPATCHERS ONLY]
+MORSE CODE REFERENCE CHART
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A .-    B -...  C -.-.  D -..   E .     F ..-.  G --.   H ....
+I ..    J .---  K -.-   L .-..  M --    N -.    O ---   P .--.
+Q --.-  R .-.   S ...   T -     U ..-   V ...-  W .--   X -..-
+Y -.--  Z --..
+
+/ or 7 spaces = word separator
+CyberChef: "From Morse Code" operation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[FEMA EMERGENCY COMMUNICATIONS - ALL RESPONDERS]
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 9: SATELLITE/SPACE
+  // Challenge: OCTAL (authentic to legacy 1970s space systems)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'satellite-uplink',
+    title: 'SATELLITE COMMAND UPLINK LOG',
+    classification: 'TOP SECRET',
+    sector: 'Satellite/Space',
+    sectorId: 'satellite',
+    icon: '🛰️',
+    challengeType: 'Octal to ASCII Conversion',
+    hint: 'Legacy space systems use octal (base-8) - convert to decimal then ASCII',
+    password: 'ORBIT_SYNC',
+    content: `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SPACE COMMAND - SATELLITE NETWORK OPERATIONS                                ║
+║  System: Deep Space Network Legacy Terminal | Era: 1970s Protocol           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+BACKGROUND: Early space systems (GPS, NOAA, military sats) were built in the
+1970s when computers used OCTAL (base-8) numbering. The PDP-11 and early Unix
+systems all used octal. Legacy satellite uplink commands still do.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LEGACY UPLINK TERMINAL - COMMAND BUFFER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Emergency override extracted from DSN uplink buffer (octal format):
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PDP-11/70 TERMINAL OUTPUT:                                                  │
+│ > cat /dev/sat_override                                                     │
+│                                                                             │
+│ OCTAL COMMAND: 117 122 102 111 124 137 123 131 116 103                     │
+│                                                                             │
+│ CONVERSION (octal → decimal → ASCII):                                       │
+│                                                                             │
+│ 117₈ = 1×64 + 1×8 + 7 = 79₁₀  = 'O'                                        │
+│ 122₈ = 1×64 + 2×8 + 2 = 82₁₀  = 'R'                                        │
+│ 102₈ = 1×64 + 0×8 + 2 = 66₁₀  = 'B'                                        │
+│ 111₈ = 1×64 + 1×8 + 1 = 73₁₀  = 'I'                                        │
+│ 124₈ = 1×64 + 2×8 + 4 = 84₁₀  = 'T'                                        │
+│ 137₈ = 1×64 + 3×8 + 7 = 95₁₀  = '_'                                        │
+│ 123₈ = 1×64 + 2×8 + 3 = 83₁₀  = 'S'                                        │
+│ 131₈ = 1×64 + 3×8 + 1 = 89₁₀  = 'Y'                                        │
+│ 116₈ = 1×64 + 1×8 + 6 = 78₁₀  = 'N'                                        │
+│ 103₈ = 1×64 + 0×8 + 3 = 67₁₀  = 'C'                                        │
+│                                                                             │
+│ DECODED: O-R-B-I-T-_-S-Y-N-C                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OCTAL REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Octal uses digits 0-7 only
+Position values: ...64s, 8s, 1s (powers of 8)
+Unix file permissions still use octal: chmod 755
+
+Python: chr(int('117', 8))  # converts octal string to character
+CyberChef: "From Octal" operation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[NASA/SPACE COMMAND - RESTRICTED ACCESS]
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 10: SUPPLY CHAIN
+  // Challenge: CODE 128 BARCODE DATA (authentic to logistics/shipping)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'supply-manifest',
+    title: 'SHIPPING CONTAINER MANIFEST',
+    classification: 'CONFIDENTIAL',
+    sector: 'Supply Chain',
+    sectorId: 'supply',
+    icon: '📦',
+    challengeType: 'ROT13 Cipher (Logistics Encoding)',
+    hint: 'ROT13 shifts letters by 13 - used in some legacy shipping systems',
+    password: 'CARGO_STOP',
+    content: `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  GLOBAL LOGISTICS NETWORK - CONTAINER TRACKING BREACH                        ║
+║  Port: Long Beach Container Terminal | System: RFID/Manifest Database       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+BACKGROUND: The global supply chain tracks millions of containers using
+standardized codes. Legacy systems use ROT13 to obfuscate sensitive data
+in plaintext logs - it's simple but keeps casual observers from reading it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTAINER MANIFEST - EMERGENCY OVERRIDE LOG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Container tracking database extract (ROT13 encoded for security):
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MANIFEST_DB> SELECT * FROM emergency_codes WHERE active=1;                  │
+│                                                                             │
+│ +------------+------------------+-------------+--------+                    │
+│ | CONTAINER  | OVERRIDE_CODE    | DESTINATION | STATUS |                    │
+│ +------------+------------------+-------------+--------+                    │
+│ | MSKU789012 | PNETB_FGBC       | PORT_AUTH   | ACTIVE |                    │
+│ | CMAU456789 | GBKLB_FUVG       | RAIL_YARD   | BACKUP |                    │
+│ +------------+------------------+-------------+--------+                    │
+│                                                                             │
+│ *** Use MSKU789012 override - it's the active emergency code ***            │
+│                                                                             │
+│ ROT13 DECODING:                                                             │
+│                                                                             │
+│ Original: P N E T B _ F G B C                                               │
+│ Shift-13: C A R G O _ S T O P                                               │
+│                                                                             │
+│ P→C  N→A  E→R  T→G  B→O  _→_  F→S  G→T  B→O  C→P                           │
+│                                                                             │
+│ DECODED: C-A-R-G-O-_-S-T-O-P                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROT13 REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ROT13 shifts each letter 13 positions:
+A↔N  B↔O  C↔P  D↔Q  E↔R  F↔S  G↔T  H↔U  I↔V  J↔W  K↔X  L↔Y  M↔Z
+
+ROT13 is its own inverse - apply twice to get original
+Linux: echo "PNETB_FGBC" | tr 'A-Za-z' 'N-ZA-Mn-za-m'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[PORT AUTHORITY - MARITIME SECURITY]
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 11: MEDIA/BROADCAST
+  // Challenge: URL ENCODING (authentic to web-based broadcast systems)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'media-eas',
+    title: 'EMERGENCY ALERT SYSTEM HIJACK',
+    classification: 'RESTRICTED',
+    sector: 'Media/Broadcast',
+    sectorId: 'media',
+    icon: '📺',
+    challengeType: 'URL/Percent Encoding',
+    hint: 'URL encoding uses %XX hex values - standard in web systems',
+    password: 'BROADCAST_OFF',
+    content: `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  FCC - EMERGENCY ALERT SYSTEM INTRUSION REPORT                               ║
+║  System: IPAWS (Integrated Public Alert and Warning System)                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+BACKGROUND: The Emergency Alert System (EAS) now uses IP-based delivery.
+IPAWS sends alerts via web APIs. URL encoding (%XX format) is standard
+for transmitting special characters in HTTP requests.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEB SERVER ACCESS LOG - IPAWS GATEWAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Attacker's request captured in Apache access log:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ access.log:                                                                 │
+│ 192.168.1.??? - - [03/Dec/2024:03:47:22 +0000]                             │
+│ "POST /api/eas/override?code=%42%52%4F%41%44%43%41%53%54%5F%4F%46%46"       │
+│ 200 1337 "-" "Mozilla/5.0 (ARDN Exploit Framework)"                         │
+│                                                                             │
+│ URL DECODING:                                                               │
+│                                                                             │
+│ %42 = 0x42 = 66  = 'B'      %52 = 0x52 = 82  = 'R'                         │
+│ %4F = 0x4F = 79  = 'O'      %41 = 0x41 = 65  = 'A'                         │
+│ %44 = 0x44 = 68  = 'D'      %43 = 0x43 = 67  = 'C'                         │
+│ %41 = 0x41 = 65  = 'A'      %53 = 0x53 = 83  = 'S'                         │
+│ %54 = 0x54 = 84  = 'T'      %5F = 0x5F = 95  = '_'                         │
+│ %4F = 0x4F = 79  = 'O'      %46 = 0x46 = 70  = 'F'                         │
+│ %46 = 0x46 = 70  = 'F'                                                      │
+│                                                                             │
+│ DECODED: B-R-O-A-D-C-A-S-T-_-O-F-F                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+URL ENCODING REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+URL encoding: %XX where XX is the hex ASCII value
+Also called "percent encoding" (RFC 3986)
+
+Python: urllib.parse.unquote("%42%52%4F%41%44%43%41%53%54%5F%4F%46%46")
+JavaScript: decodeURIComponent("%42%52...")
+CyberChef: "URL Decode" operation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[FCC ENFORCEMENT BUREAU - BROADCAST SECURITY]
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SECTOR 12: NUCLEAR SYSTEMS
+  // Challenge: NRC PROCEDURE ACROSTIC (authentic to nuclear safety docs)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'nuclear-scram',
+    title: 'NUCLEAR REACTOR SCRAM PROCEDURE',
+    classification: 'TOP SECRET - SCI',
+    sector: 'Nuclear Systems',
+    sectorId: 'nuclear',
+    icon: '☢️',
+    challengeType: 'Safety Procedure Acrostic',
+    hint: 'Read the FIRST LETTER of each safety step - a common NRC mnemonic technique',
+    password: 'REACTOR_COLD',
+    content: `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  NUCLEAR REGULATORY COMMISSION - EMERGENCY SCRAM PROTOCOL                    ║
+║  Plant: Unit 2 PWR | Status: COOLING SYSTEM COMPROMISED                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+BACKGROUND: Nuclear safety procedures use mnemonic devices to help operators
+remember critical steps under stress. The first letters of procedure steps
+often spell out the goal - this is standard NRC training methodology.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EMERGENCY OPERATING PROCEDURE EOP-001
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SCRAM SEQUENCE - EXECUTE IN ORDER:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  ☢️ EMERGENCY REACTOR SHUTDOWN CHECKLIST ☢️                                 │
+│                                                                             │
+│  STEP 01: RECORD all control rod positions before action                    │
+│  STEP 02: ENGAGE manual SCRAM switches simultaneously                       │
+│  STEP 03: ACTIVATE emergency boration system                                │
+│  STEP 04: CONFIRM all rods fully inserted (green lights)                    │
+│  STEP 05: TERMINATE reactor coolant pump coastdown                          │
+│  STEP 06: OPEN atmospheric dump valves if pressure rising                   │
+│  STEP 07: REDUCE turbine load to zero                                       │
+│                                                                             │
+│  [TRANSITION TO COOLDOWN MODE]                                              │
+│                                                                             │
+│  STEP 08: CHECK emergency core cooling system alignment                     │
+│  STEP 09: ORDER chemistry to sample RCS boron concentration                 │
+│  STEP 10: LIMIT cooldown rate to 100°F per hour maximum                     │
+│  STEP 11: DOCUMENT all actions in control room log                          │
+│                                                                             │
+│  *** The SCRAM code is hidden in this procedure ***                         │
+│  Read the FIRST LETTER of each step's first word.                           │
+│                                                                             │
+│  Steps 1-7: R-E-A-C-T-O-R                                                   │
+│  Steps 8-11: C-O-L-D                                                        │
+│  Combined with underscore: R-E-A-C-T-O-R-_-C-O-L-D                          │
+│                                                                             │
+│  OVERRIDE CODE: REACTOR_COLD                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NRC PROCEDURE FORMAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NRC requires licensees to use "memory aids" in emergency procedures
+Acrostic mnemonics help operators recall critical sequences under stress
+Example: SCRAM = Safety Control Rod Axe Man (original 1940s term)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[NRC CLASSIFIED - LICENSED OPERATORS ONLY]
     `
   }
 ]
@@ -645,7 +867,6 @@ function IntelDocuments() {
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showAnswers, setShowAnswers] = useState(false)
   
-  // Enable scrolling on this page
   useEnableScroll()
 
   const handlePrint = () => {
@@ -661,8 +882,22 @@ function IntelDocuments() {
     <div className="intel-page">
       {/* Header */}
       <header className="intel-header no-print">
-        <h1>📁 INTERCEPTED INTELLIGENCE DOCUMENTS</h1>
-        <p>These classified documents contain hidden security codes. Can you find them?</p>
+        <h1>📁 CLASSIFIED INTELLIGENCE DOCUMENTS</h1>
+        <p>12 sector-specific documents with industry-authentic cryptographic challenges. Each code unlocks a critical infrastructure sector.</p>
+        <div className="challenge-types">
+          <span className="challenge-tag">MD5 Hash</span>
+          <span className="challenge-tag">Base64</span>
+          <span className="challenge-tag">Hex Dump</span>
+          <span className="challenge-tag">Periodic Table</span>
+          <span className="challenge-tag">Binary</span>
+          <span className="challenge-tag">HL7 Medical</span>
+          <span className="challenge-tag">XOR Cipher</span>
+          <span className="challenge-tag">Morse Code</span>
+          <span className="challenge-tag">Octal</span>
+          <span className="challenge-tag">ROT13</span>
+          <span className="challenge-tag">URL Encoding</span>
+          <span className="challenge-tag">Acrostic</span>
+        </div>
         <div className="header-actions">
           <button onClick={handlePrint} className="print-all-btn">
             🖨️ Print All Documents
@@ -680,13 +915,17 @@ function IntelDocuments() {
       {/* GM Answer Key */}
       {showAnswers && (
         <div className="answer-key no-print">
-          <h2>🔑 GM ANSWER KEY</h2>
+          <h2>🔑 GM ANSWER KEY - ALL 12 SECTORS</h2>
           <div className="answers-grid">
             {DOCUMENTS.map(doc => (
               <div key={doc.id} className="answer-item">
-                <strong>{doc.sector}:</strong>
-                <code>{doc.password}</code>
-                <span className="hint-text">({doc.hint})</span>
+                <span className="answer-icon">{doc.icon}</span>
+                <div className="answer-details">
+                  <strong>{doc.sector}</strong>
+                  <code>{doc.password}</code>
+                  <span className="challenge-type">{doc.challengeType}</span>
+                  <span className="hint-text">{doc.hint}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -711,7 +950,8 @@ function IntelDocuments() {
             </div>
             
             <div className="doc-sector">
-              <strong>Sector:</strong> {doc.sector}
+              <strong>Sector:</strong> {doc.sector} &nbsp;|&nbsp; 
+              <strong>Challenge:</strong> <span className="challenge-badge">{doc.challengeType}</span>
             </div>
             
             <pre className="doc-content">{doc.content}</pre>
@@ -726,6 +966,8 @@ function IntelDocuments() {
               <div className="doc-answer no-print">
                 <strong>Password:</strong> <code>{doc.password}</code>
                 <br />
+                <strong>Challenge:</strong> {doc.challengeType}
+                <br />
                 <strong>Hint:</strong> {doc.hint}
               </div>
             )}
@@ -733,13 +975,13 @@ function IntelDocuments() {
         ))}
       </div>
 
-      {/* Print Footer */}
+      {/* Footer */}
       <footer className="intel-footer">
         <p>A.R.D.N. INTELLIGENCE INTERCEPT - CLASSIFIED</p>
+        <p className="footer-sub">12 Sectors • 12 Industry-Authentic Challenges • Can your team crack them all?</p>
       </footer>
     </div>
   )
 }
 
 export default IntelDocuments
-
