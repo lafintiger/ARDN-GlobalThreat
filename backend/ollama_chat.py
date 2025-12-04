@@ -13,7 +13,7 @@ from challenges import challenge_manager, ChallengeType, RewardType
 
 # Use environment variable for Docker support, fallback to localhost for local dev
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-MODEL_NAME = "huihui_ai/qwen3-coder-abliterated"
+MODEL_NAME = "huihui_ai/qwen3-abliterated:8b"
 
 # Maximum context length - set high for the 256k model
 NUM_CTX = 32768  # 32k context, increase if you have enough VRAM

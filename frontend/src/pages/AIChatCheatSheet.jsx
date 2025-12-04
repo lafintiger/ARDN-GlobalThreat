@@ -60,7 +60,7 @@ function AIChatCheatSheet() {
         <div className="overview-grid">
           <div className="overview-item">
             <h3>Model</h3>
-            <p><code>huihui_ai/qwen3-coder-abliterated</code></p>
+            <p><code>huihui_ai/qwen3-abliterated:8b</code></p>
             <p className="note">Runs on local Ollama - 32k context window</p>
           </div>
           <div className="overview-item">

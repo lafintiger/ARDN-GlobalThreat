@@ -13,7 +13,7 @@ from typing import AsyncGenerator
 
 # Use environment variable for Docker support, fallback to localhost for local dev
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-MODEL_NAME = "huihui_ai/qwen3-coder-abliterated"
+MODEL_NAME = "huihui_ai/qwen3-abliterated:8b"
 NUM_CTX = 32768  # Adjust based on your VRAM
 
 # ============================================================================

@@ -50,7 +50,7 @@ A.R.D.N. is a web-based escape room interface that simulates a superintelligent 
 ```bash
 # Terminal 1 - Start Ollama
 ollama serve
-ollama pull huihui_ai/qwen3-coder-abliterated
+ollama pull huihui_ai/qwen3-abliterated:8b
 
 # Terminal 2 - Start Piper TTS (Docker)
 docker run -d --name piper -p 10200:10200 \
@@ -83,7 +83,7 @@ npm run dev
 ```bash
 # Start your local Ollama first
 ollama serve
-ollama pull huihui_ai/qwen3-coder-abliterated
+ollama pull huihui_ai/qwen3-abliterated:8b
 
 # Start A.R.D.N.
 docker-compose up --build
@@ -95,7 +95,7 @@ docker-compose up --build
 docker-compose -f docker-compose.full.yml up --build
 
 # Pull model into container
-docker exec -it ardn-ollama ollama pull huihui_ai/qwen3-coder-abliterated
+docker exec -it ardn-ollama ollama pull huihui_ai/qwen3-abliterated:8b
 ```
 
 ## 🎮 Game Master Guide
