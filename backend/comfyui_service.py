@@ -1,6 +1,7 @@
 """
 ComfyUI Integration Service
 Generates disturbing AI takeover images based on game events and chat
+Supports local or network ComfyUI instances
 """
 
 import aiohttp
@@ -11,8 +12,9 @@ import random
 from typing import Optional, Dict, Any
 import os
 
-# ComfyUI API endpoint
-COMFYUI_URL = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188")
+# Default settings - can be changed at runtime
+DEFAULT_COMFYUI_URL = "http://127.0.0.1:8188"
+DEFAULT_MODEL = "z-image.safetensors"  # Change to your preferred model
 
 # Prompt templates for different scenarios
 PROMPT_TEMPLATES = {
@@ -48,12 +50,55 @@ class ComfyUIService:
         self.client_id = "ardn-game"
         self._last_image: Optional[bytes] = None
         self._generating = False
+        
+        # Configurable settings
+        self.url = os.getenv("COMFYUI_URL", DEFAULT_COMFYUI_URL)
+        self.model_name = os.getenv("COMFYUI_MODEL", DEFAULT_MODEL)
+        self.image_width = 768
+        self.image_height = 768
+        self.steps = 20
+        self.cfg = 7.0
+    
+    def set_url(self, url: str):
+        """Set the ComfyUI server URL."""
+        # Ensure no trailing slash
+        self.url = url.rstrip('/')
+        print(f"[ComfyUI] URL set to: {self.url}")
+    
+    def set_model(self, model_name: str):
+        """Set the model/checkpoint name."""
+        self.model_name = model_name
+        print(f"[ComfyUI] Model set to: {self.model_name}")
+    
+    def set_image_size(self, width: int, height: int):
+        """Set output image dimensions."""
+        self.image_width = width
+        self.image_height = height
+    
+    def set_generation_params(self, steps: int = None, cfg: float = None):
+        """Set generation parameters."""
+        if steps is not None:
+            self.steps = steps
+        if cfg is not None:
+            self.cfg = cfg
+    
+    def get_config(self) -> dict:
+        """Get current configuration."""
+        return {
+            "url": self.url,
+            "model_name": self.model_name,
+            "image_width": self.image_width,
+            "image_height": self.image_height,
+            "steps": self.steps,
+            "cfg": self.cfg,
+            "enabled": self.enabled
+        }
     
     async def check_connection(self) -> bool:
         """Check if ComfyUI is accessible."""
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{COMFYUI_URL}/system_stats", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                async with session.get(f"{self.url}/system_stats", timeout=aiohttp.ClientTimeout(total=5)) as resp:
                     return resp.status == 200
         except Exception:
             return False
@@ -61,16 +106,14 @@ class ComfyUIService:
     def _build_workflow(self, prompt: str, negative: str = NEGATIVE_PROMPT) -> Dict[str, Any]:
         """
         Build a simple txt2img workflow for ComfyUI.
-        This assumes a basic checkpoint is loaded in ComfyUI.
-        Adjust node IDs based on your workflow.
+        Uses configurable model and image settings.
         """
-        # This is a minimal workflow - adjust based on your ComfyUI setup
         workflow = {
             "3": {
                 "inputs": {
                     "seed": random.randint(0, 2**32),
-                    "steps": 20,
-                    "cfg": 7.5,
+                    "steps": self.steps,
+                    "cfg": self.cfg,
                     "sampler_name": "euler",
                     "scheduler": "normal",
                     "denoise": 1,
@@ -83,14 +126,14 @@ class ComfyUIService:
             },
             "4": {
                 "inputs": {
-                    "ckpt_name": "sd_xl_base_1.0.safetensors"  # Adjust to your model
+                    "ckpt_name": self.model_name  # Configurable model
                 },
                 "class_type": "CheckpointLoaderSimple"
             },
             "5": {
                 "inputs": {
-                    "width": 768,
-                    "height": 768,
+                    "width": self.image_width,
+                    "height": self.image_height,
                     "batch_size": 1
                 },
                 "class_type": "EmptyLatentImage"
@@ -159,7 +202,7 @@ class ComfyUIService:
             async with aiohttp.ClientSession() as session:
                 # Queue the prompt
                 async with session.post(
-                    f"{COMFYUI_URL}/prompt",
+                    f"{self.url}/prompt",
                     json={"prompt": workflow, "client_id": self.client_id}
                 ) as resp:
                     if resp.status != 200:
@@ -176,7 +219,7 @@ class ComfyUIService:
                 for _ in range(120):  # Max 2 minutes
                     await asyncio.sleep(1)
                     
-                    async with session.get(f"{COMFYUI_URL}/history/{prompt_id}") as hist_resp:
+                    async with session.get(f"{self.url}/history/{prompt_id}") as hist_resp:
                         if hist_resp.status != 200:
                             continue
                         
@@ -193,7 +236,7 @@ class ComfyUIService:
                                         subfolder = img_info.get("subfolder", "")
                                         
                                         # Fetch the image
-                                        img_url = f"{COMFYUI_URL}/view?filename={filename}&subfolder={subfolder}&type=output"
+                                        img_url = f"{self.url}/view?filename={filename}&subfolder={subfolder}&type=output"
                                         async with session.get(img_url) as img_resp:
                                             if img_resp.status == 200:
                                                 image_data = await img_resp.read()

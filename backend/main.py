@@ -750,15 +750,47 @@ class ImagePrompt(BaseModel):
     event_type: Optional[str] = "custom"
     context: Optional[str] = ""
 
+class ComfyUIConfig(BaseModel):
+    url: Optional[str] = None
+    model_name: Optional[str] = None
+    image_width: Optional[int] = None
+    image_height: Optional[int] = None
+    steps: Optional[int] = None
+    cfg: Optional[float] = None
+
 @app.get("/api/comfyui/status")
 async def get_comfyui_status():
-    """Check if ComfyUI is available."""
+    """Check if ComfyUI is available and get current config."""
     connected = await comfyui_service.check_connection()
+    config = comfyui_service.get_config()
     return {
         "enabled": comfyui_service.enabled,
         "connected": connected,
-        "generating": comfyui_service.is_generating()
+        "generating": comfyui_service.is_generating(),
+        **config
     }
+
+@app.post("/api/comfyui/config")
+async def set_comfyui_config(config: ComfyUIConfig):
+    """Configure ComfyUI settings (URL, model, etc.)."""
+    if config.url is not None:
+        comfyui_service.set_url(config.url)
+    if config.model_name is not None:
+        comfyui_service.set_model(config.model_name)
+    if config.image_width is not None and config.image_height is not None:
+        comfyui_service.set_image_size(config.image_width, config.image_height)
+    if config.steps is not None or config.cfg is not None:
+        comfyui_service.set_generation_params(config.steps, config.cfg)
+    
+    return {
+        "success": True,
+        "config": comfyui_service.get_config()
+    }
+
+@app.get("/api/comfyui/config")
+async def get_comfyui_config():
+    """Get current ComfyUI configuration."""
+    return comfyui_service.get_config()
 
 @app.post("/api/comfyui/generate")
 async def generate_image(request: ImagePrompt):

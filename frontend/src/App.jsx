@@ -31,6 +31,11 @@ function App() {
   const [voiceEnabled, setVoiceEnabled] = useState(true) // TTS voice toggle
   const [musicExpanded, setMusicExpanded] = useState(false) // Music player toggle
   const [comfyImage, setComfyImage] = useState(null) // ComfyUI generated image
+  const [comfySettings, setComfySettings] = useState({
+    url: 'http://127.0.0.1:8188',
+    model_name: 'z-image.safetensors',
+    connected: false
+  })
   const prevThreatLevel = useRef(0)
   
   const { sendMessage, lastMessage, connectionStatus } = useWebSocket(WS_STATE)
@@ -196,6 +201,9 @@ function App() {
       .then(res => res.json())
       .then(data => setGameState(data))
       .catch(err => console.error('Failed to fetch state:', err))
+    
+    // Check ComfyUI status
+    checkComfyStatus()
   }, [])
   
   const handlePasswordSubmit = (code) => {
@@ -226,6 +234,19 @@ function App() {
   const triggerComfyUI = (eventType, context = '') => fetch(`http://localhost:8333/api/comfyui/generate/event/${eventType}?context=${encodeURIComponent(context)}`, {
     method: 'POST'
   }).catch(err => console.log('ComfyUI not available:', err))
+  
+  const updateComfyConfig = (updates) => fetch('http://localhost:8333/api/comfyui/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  }).then(res => res.json()).then(data => {
+    if (data.config) setComfySettings(prev => ({ ...prev, ...data.config }))
+  }).catch(err => console.log('ComfyUI config error:', err))
+  
+  const checkComfyStatus = () => fetch('http://localhost:8333/api/comfyui/status')
+    .then(res => res.json())
+    .then(data => setComfySettings(prev => ({ ...prev, ...data })))
+    .catch(() => setComfySettings(prev => ({ ...prev, connected: false })))
   
   if (!gameState) {
     return (
@@ -386,25 +407,68 @@ function App() {
               </div>
             </div>
             
-            {/* ComfyUI Trigger */}
+            {/* ComfyUI Settings & Trigger */}
             <div className="admin-section">
-              <span className="admin-label">AI VISION (ComfyUI)</span>
+              <span className="admin-label">
+                AI VISION (ComfyUI) 
+                <span className={`comfy-status ${comfySettings.connected ? 'connected' : 'disconnected'}`}>
+                  {comfySettings.connected ? '● CONNECTED' : '○ OFFLINE'}
+                </span>
+              </span>
+              
+              {/* Settings */}
+              <div className="comfy-settings">
+                <div className="setting-row">
+                  <label>Server URL:</label>
+                  <input 
+                    type="text"
+                    value={comfySettings.url}
+                    onChange={(e) => setComfySettings(prev => ({ ...prev, url: e.target.value }))}
+                    onBlur={(e) => updateComfyConfig({ url: e.target.value })}
+                    placeholder="http://127.0.0.1:8188"
+                    className="comfy-input"
+                  />
+                  <button 
+                    className="btn-check"
+                    onClick={checkComfyStatus}
+                    title="Test Connection"
+                  >
+                    🔄
+                  </button>
+                </div>
+                <div className="setting-row">
+                  <label>Model:</label>
+                  <input 
+                    type="text"
+                    value={comfySettings.model_name}
+                    onChange={(e) => setComfySettings(prev => ({ ...prev, model_name: e.target.value }))}
+                    onBlur={(e) => updateComfyConfig({ model_name: e.target.value })}
+                    placeholder="z-image.safetensors"
+                    className="comfy-input"
+                  />
+                </div>
+              </div>
+              
+              {/* Trigger Buttons */}
               <div className="comfy-buttons">
                 <button 
                   className="btn-comfy"
                   onClick={() => triggerComfyUI('taunt')}
+                  disabled={!comfySettings.connected}
                 >
                   👁 TAUNT
                 </button>
                 <button 
                   className="btn-comfy"
                   onClick={() => triggerComfyUI('high_threat')}
+                  disabled={!comfySettings.connected}
                 >
                   ⚠ THREAT
                 </button>
                 <button 
                   className="btn-comfy"
                   onClick={() => triggerComfyUI('sector_fall', 'critical infrastructure')}
+                  disabled={!comfySettings.connected}
                 >
                   💀 DESTRUCTION
                 </button>

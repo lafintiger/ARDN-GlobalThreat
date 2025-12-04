@@ -416,10 +416,84 @@ body {
   transition: all 0.2s;
 }
 
-.btn-comfy:hover {
+.btn-comfy:hover:not(:disabled) {
   background: var(--purple);
   color: #fff;
   box-shadow: 0 0 15px var(--purple);
+}
+
+.btn-comfy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ComfyUI Settings */
+.comfy-status {
+  font-size: 0.7rem;
+  margin-left: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+}
+
+.comfy-status.connected {
+  color: var(--green);
+  background: rgba(57, 255, 20, 0.1);
+}
+
+.comfy-status.disconnected {
+  color: var(--red);
+  background: rgba(255, 42, 42, 0.1);
+}
+
+.comfy-settings {
+  margin-bottom: var(--spacing-sm);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.setting-row label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.comfy-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--purple);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.comfy-input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.btn-check {
+  padding: 6px 10px;
+  border: 1px solid var(--cyan);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-check:hover {
+  background: var(--cyan);
+  color: #000;
 }
 
 /* Main Content */
