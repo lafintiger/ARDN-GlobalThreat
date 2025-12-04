@@ -32,10 +32,15 @@ function AIChat() {
             streamingContentRef.current = ''
           } else if (data.type === 'chat_token') {
             streamingContentRef.current += data.token
-            setStreamingContent(streamingContentRef.current)
+            // Filter out [IMAGE: ...] tags from display during streaming
+            const displayContent = streamingContentRef.current.replace(/\[IMAGE:[^\]]*\]?/gi, '')
+            setStreamingContent(displayContent)
           } else if (data.type === 'chat_end') {
             // Save the content before clearing anything
-            const finalContent = streamingContentRef.current
+            let finalContent = streamingContentRef.current
+            
+            // Strip [IMAGE: ...] tags from displayed content (AI uses these internally)
+            finalContent = finalContent.replace(/\[IMAGE:[^\]]*\]/gi, '').trim()
             
             // Add message to history FIRST, before clearing streaming state
             if (finalContent && finalContent.trim()) {
