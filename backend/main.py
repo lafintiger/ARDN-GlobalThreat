@@ -1122,9 +1122,11 @@ async def websocket_chat(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             msg = json.loads(data)
+            print(f"[WS-CHAT] Received message type: {msg.get('type')}")
             
             if msg.get("type") == "chat":
                 user_message = msg.get("message", "")
+                print(f"[WS-CHAT] User message: {user_message[:50]}...")
                 
                 # Update session with current threat level and student score
                 session.update_threat_level(game_state.global_threat_level)

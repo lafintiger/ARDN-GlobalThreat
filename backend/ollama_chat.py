@@ -203,15 +203,24 @@ class ARDNChatSession:
         """Check if we should generate an image based on the conversation."""
         self.messages_since_image += 1
         
-        # Rate limit: only generate image every 3+ messages
-        if self.messages_since_image < 3:
-            return
-        
-        # 40% chance to generate image when triggered
-        if random.random() > 0.4:
-            return
+        # DEBUG: Log that we're checking for triggers
+        print(f"[CHAT-IMAGE] Checking message for triggers: '{message[:50]}...'")
         
         trigger = self._detect_image_trigger(message)
+        
+        if not trigger:
+            print(f"[CHAT-IMAGE] No trigger found")
+            return
+        
+        print(f"[CHAT-IMAGE] TRIGGER DETECTED: {trigger[0]}")
+        
+        # Rate limit: only generate image every 1+ messages (testing)
+        if self.messages_since_image < 1:
+            print(f"[CHAT-IMAGE] Rate limited (messages_since_image={self.messages_since_image})")
+            return
+        
+        # TESTING: Always trigger when detected (remove random chance for now)
+        print(f"[CHAT-IMAGE] Proceeding to generate image!")
         if trigger and self.image_callback:
             trigger_type, base_prompt = trigger
             
@@ -232,6 +241,7 @@ class ARDNChatSession:
     
     async def process_message(self, message: str) -> AsyncGenerator[str, None]:
         """Process a message and generate response, handling challenges."""
+        print(f"[CHAT] Processing message: '{message[:50]}...'")
         
         # Check if there's an active challenge and this might be an answer
         if self.challenge_active and self.pending_challenge_id:

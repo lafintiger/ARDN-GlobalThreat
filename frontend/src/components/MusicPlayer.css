@@ -2,8 +2,8 @@
 
 .music-player {
   position: fixed;
-  bottom: 80px;
-  right: 20px;
+  bottom: 20px;
+  left: 20px;
   background: rgba(10, 10, 15, 0.95);
   border: 1px solid var(--purple);
   border-radius: 8px;
