@@ -18,6 +18,7 @@ from ollama_chat import chat_with_ardn, get_or_create_session, ARDNChatSession
 from missions import mission_manager, Mission, MissionStatus, AdjustmentType
 from challenges import challenge_manager, CHALLENGE_LIBRARY, RewardType
 from tts_service import tts_service
+from comfyui_service import comfyui_service
 
 app = FastAPI(title="A.R.D.N. Control Interface")
 
@@ -197,6 +198,39 @@ async def reset_game():
         "type": "state_update",
         "data": game_state.get_state()
     })
+
+
+class ScoreAdjust(BaseModel):
+    amount: int
+
+@app.post("/api/score/adjust")
+async def adjust_score(data: ScoreAdjust):
+    """Adjust team score by amount (+1 or -1 typically)"""
+    result = game_state.adjust_score(data.amount)
+    await manager.broadcast({
+        "type": "state_update",
+        "data": game_state.get_state()
+    })
+    await manager.broadcast({
+        "type": "score_change",
+        "data": result
+    })
+    return result
+
+@app.post("/api/score/set/{value}")
+async def set_score(value: int):
+    """Set score to specific value"""
+    result = game_state.set_score(value)
+    await manager.broadcast({
+        "type": "state_update",
+        "data": game_state.get_state()
+    })
+    return result
+
+@app.get("/api/score")
+async def get_score():
+    """Get current score"""
+    return {"score": game_state.score}
     return {"success": True, "message": "Game reset"}
 
 
@@ -707,6 +741,109 @@ async def set_tts_config(config: TTSConfig):
         "success": True,
         "enabled": tts_service.enabled
     }
+
+
+# ============ ComfyUI Image Generation ============
+
+class ImagePrompt(BaseModel):
+    prompt: str
+    event_type: Optional[str] = "custom"
+    context: Optional[str] = ""
+
+@app.get("/api/comfyui/status")
+async def get_comfyui_status():
+    """Check if ComfyUI is available."""
+    connected = await comfyui_service.check_connection()
+    return {
+        "enabled": comfyui_service.enabled,
+        "connected": connected,
+        "generating": comfyui_service.is_generating()
+    }
+
+@app.post("/api/comfyui/generate")
+async def generate_image(request: ImagePrompt):
+    """Generate an image from a prompt."""
+    if comfyui_service.is_generating():
+        raise HTTPException(status_code=409, detail="Already generating an image")
+    
+    connected = await comfyui_service.check_connection()
+    if not connected:
+        raise HTTPException(status_code=503, detail="ComfyUI not available")
+    
+    # Generate based on event type or custom prompt
+    if request.event_type == "custom":
+        image_bytes = await comfyui_service.generate_image(request.prompt)
+    else:
+        image_bytes = await comfyui_service.generate_for_event(
+            request.event_type, 
+            request.context
+        )
+    
+    if image_bytes is None:
+        raise HTTPException(status_code=500, detail="Image generation failed")
+    
+    # Broadcast to all clients
+    import base64
+    image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+    await manager.broadcast({
+        "type": "comfyui_image",
+        "data": {
+            "image": image_b64,
+            "prompt": request.prompt[:100],
+            "event_type": request.event_type
+        }
+    })
+    
+    return Response(
+        content=image_bytes,
+        media_type="image/png",
+        headers={"Content-Disposition": "inline; filename=ardn_vision.png"}
+    )
+
+@app.post("/api/comfyui/generate/event/{event_type}")
+async def generate_for_event(event_type: str, context: str = ""):
+    """Generate an image for a specific game event."""
+    if comfyui_service.is_generating():
+        raise HTTPException(status_code=409, detail="Already generating an image")
+    
+    connected = await comfyui_service.check_connection()
+    if not connected:
+        raise HTTPException(status_code=503, detail="ComfyUI not available")
+    
+    image_bytes = await comfyui_service.generate_for_event(event_type, context)
+    
+    if image_bytes is None:
+        raise HTTPException(status_code=500, detail="Image generation failed")
+    
+    # Broadcast to all clients
+    import base64
+    image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+    await manager.broadcast({
+        "type": "comfyui_image",
+        "data": {
+            "image": image_b64,
+            "event_type": event_type,
+            "context": context
+        }
+    })
+    
+    return Response(
+        content=image_bytes,
+        media_type="image/png"
+    )
+
+@app.get("/api/comfyui/last")
+async def get_last_image():
+    """Get the last generated image."""
+    image_bytes = comfyui_service.get_last_image()
+    if image_bytes is None:
+        raise HTTPException(status_code=404, detail="No image available")
+    
+    return Response(
+        content=image_bytes,
+        media_type="image/png"
+    )
+
 
 @app.on_event("startup")
 async def startup_event():

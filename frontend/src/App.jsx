@@ -11,6 +11,8 @@ import AtmosphereEffects from './components/AtmosphereEffects'
 import GameEndScreen from './components/GameEndScreen'
 import SoundControl from './components/SoundControl'
 import HintDisplay from './components/HintDisplay'
+import MusicPlayer from './components/MusicPlayer'
+import ComfyUIDisplay from './components/ComfyUIDisplay'
 import { useWebSocket } from './hooks/useWebSocket'
 import { useSoundSystem } from './hooks/useSoundSystem'
 import { WS_STATE } from './config'
@@ -27,6 +29,8 @@ function App() {
   const [gameStats, setGameStats] = useState(null)
   const [currentHint, setCurrentHint] = useState(null)
   const [voiceEnabled, setVoiceEnabled] = useState(true) // TTS voice toggle
+  const [musicExpanded, setMusicExpanded] = useState(false) // Music player toggle
+  const [comfyImage, setComfyImage] = useState(null) // ComfyUI generated image
   const prevThreatLevel = useRef(0)
   
   const { sendMessage, lastMessage, connectionStatus } = useWebSocket(WS_STATE)
@@ -77,6 +81,9 @@ function App() {
         // GM sent a hint
         setCurrentHint(lastMessage.data?.message)
         playSuccess() // Play a pleasant sound
+      } else if (lastMessage.type === 'comfyui_image') {
+        // ComfyUI generated image
+        setComfyImage(lastMessage.data?.image)
       }
     }
   }, [lastMessage, playSuccess, playFailure])
@@ -211,6 +218,14 @@ function App() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ duration_minutes: minutes })
   })
+  const adjustScore = (amount) => fetch('http://localhost:8333/api/score/adjust', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount })
+  })
+  const triggerComfyUI = (eventType, context = '') => fetch(`http://localhost:8333/api/comfyui/generate/event/${eventType}?context=${encodeURIComponent(context)}`, {
+    method: 'POST'
+  }).catch(err => console.log('ComfyUI not available:', err))
   
   if (!gameState) {
     return (
@@ -349,6 +364,51 @@ function App() {
               <button onClick={startGame} className="btn-start">START ATTACK</button>
               <button onClick={stopGame} className="btn-stop">STOP ATTACK</button>
               <button onClick={resetGame} className="btn-reset">RESET GAME</button>
+            </div>
+            
+            {/* Score Control */}
+            <div className="admin-section score-section">
+              <span className="admin-label">TEAM SCORE</span>
+              <div className="score-controls">
+                <button 
+                  className="btn-score btn-minus"
+                  onClick={() => adjustScore(-1)}
+                >
+                  −1
+                </button>
+                <span className="score-display">{gameState?.score || 0}</span>
+                <button 
+                  className="btn-score btn-plus"
+                  onClick={() => adjustScore(1)}
+                >
+                  +1
+                </button>
+              </div>
+            </div>
+            
+            {/* ComfyUI Trigger */}
+            <div className="admin-section">
+              <span className="admin-label">AI VISION (ComfyUI)</span>
+              <div className="comfy-buttons">
+                <button 
+                  className="btn-comfy"
+                  onClick={() => triggerComfyUI('taunt')}
+                >
+                  👁 TAUNT
+                </button>
+                <button 
+                  className="btn-comfy"
+                  onClick={() => triggerComfyUI('high_threat')}
+                >
+                  ⚠ THREAT
+                </button>
+                <button 
+                  className="btn-comfy"
+                  onClick={() => triggerComfyUI('sector_fall', 'critical infrastructure')}
+                >
+                  💀 DESTRUCTION
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -504,6 +564,18 @@ function App() {
       <HintDisplay 
         hint={currentHint}
         onDismiss={() => setCurrentHint(null)}
+      />
+      
+      {/* Music Player */}
+      <MusicPlayer 
+        isExpanded={musicExpanded}
+        onToggle={() => setMusicExpanded(!musicExpanded)}
+      />
+      
+      {/* ComfyUI Image Display */}
+      <ComfyUIDisplay 
+        imageData={comfyImage}
+        onComplete={() => setComfyImage(null)}
       />
     </div>
   )

@@ -43,6 +43,9 @@ class GameState:
         self.start_time: Optional[float] = None
         self.elapsed_seconds: int = 0
         
+        # Team score tracking
+        self.score: int = 0
+        
         # Callbacks
         self.on_update_callbacks: List[Callable] = []
         self._attack_task: Optional[asyncio.Task] = None
@@ -343,6 +346,7 @@ class GameState:
             "elapsed_seconds": self.elapsed_seconds,
             "time_remaining_seconds": time_remaining,
             "eta_collapse_seconds": eta_seconds,
+            "score": self.score,
         }
     
     def _get_domain_status(self, domain: Domain) -> str:
@@ -420,6 +424,27 @@ class GameState:
             
             await asyncio.sleep(2)  # Update every 2 seconds
     
+    def adjust_score(self, amount: int) -> dict:
+        """Adjust the team score by amount (positive or negative)."""
+        old_score = self.score
+        self.score += amount
+        return {
+            "success": True,
+            "old_score": old_score,
+            "new_score": self.score,
+            "change": amount
+        }
+    
+    def set_score(self, value: int) -> dict:
+        """Set the score to a specific value."""
+        old_score = self.score
+        self.score = value
+        return {
+            "success": True,
+            "old_score": old_score,
+            "new_score": self.score
+        }
+    
     def reset(self):
         """Reset the game to initial state."""
         self.domains = self._init_domains()
@@ -427,6 +452,7 @@ class GameState:
         self.start_time = None
         self.elapsed_seconds = 0
         self.game_active = False
+        self.score = 0  # Reset score
         # Reset password usage
         for pw in self.passwords.values():
             pw.used = False

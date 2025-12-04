@@ -203,8 +203,8 @@ class TTSService:
         audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32)
         
         # Apply ominous effects:
-        # 1. Pitch shift down by ~45% (demonic rumble territory)
-        pitch_factor = 0.55  # Lower = deeper voice
+        # 1. Pitch shift down for ominous tone (0.65 = clear but still menacing)
+        pitch_factor = 0.65  # Lower = deeper voice (was 0.55 "demonic rumble")
         
         # Resample to shift pitch
         num_samples = int(len(audio_array) / pitch_factor)

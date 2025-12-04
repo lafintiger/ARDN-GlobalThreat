@@ -1,0 +1,252 @@
+/* ComfyUI Display - Dramatic Flicker Effect */
+
+.comfyui-display {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Glitch overlay */
+.glitch-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 42, 42, 0.3);
+  box-shadow: 0 0 20px var(--red);
+  animation: scan-move 0.1s linear infinite;
+}
+
+.noise-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.15;
+  animation: noise-flicker 0.05s infinite;
+}
+
+@keyframes noise-flicker {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.25; }
+}
+
+@keyframes scan-move {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* Image container */
+.image-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  transition: opacity 0.1s;
+}
+
+.image-container.visible {
+  opacity: 1;
+}
+
+.image-container.hidden {
+  opacity: 0;
+}
+
+.generated-image {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border: 3px solid var(--red);
+  box-shadow: 
+    0 0 30px rgba(255, 42, 42, 0.5),
+    inset 0 0 50px rgba(0, 0, 0, 0.5);
+  animation: image-glow 2s ease-in-out infinite;
+}
+
+@keyframes image-glow {
+  0%, 100% { 
+    box-shadow: 
+      0 0 30px rgba(255, 42, 42, 0.5),
+      inset 0 0 50px rgba(0, 0, 0, 0.5);
+  }
+  50% { 
+    box-shadow: 
+      0 0 60px rgba(255, 42, 42, 0.8),
+      inset 0 0 50px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Flicker phases */
+.comfyui-display.flicker-in .generated-image,
+.comfyui-display.flicker-out .generated-image {
+  animation: glitch-image 0.1s infinite;
+}
+
+@keyframes glitch-image {
+  0% { 
+    transform: translate(0);
+    filter: hue-rotate(0deg);
+  }
+  25% { 
+    transform: translate(-5px, 3px);
+    filter: hue-rotate(90deg);
+  }
+  50% { 
+    transform: translate(5px, -3px);
+    filter: hue-rotate(180deg);
+  }
+  75% { 
+    transform: translate(-3px, -5px);
+    filter: hue-rotate(270deg);
+  }
+  100% { 
+    transform: translate(0);
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* ARDN watermark */
+.ardn-watermark {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 30px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--red);
+}
+
+.watermark-text {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--red);
+  letter-spacing: 4px;
+  text-shadow: 0 0 10px var(--red);
+}
+
+/* Status text */
+.status-text {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--cyan);
+  letter-spacing: 6px;
+  text-shadow: 0 0 20px var(--cyan);
+  white-space: nowrap;
+}
+
+.status-text.glitching {
+  animation: text-glitch 0.15s infinite;
+}
+
+@keyframes text-glitch {
+  0%, 100% { 
+    transform: translateX(-50%);
+    opacity: 1;
+  }
+  33% { 
+    transform: translateX(-52%);
+    opacity: 0.8;
+    color: var(--red);
+  }
+  66% { 
+    transform: translateX(-48%);
+    opacity: 0.6;
+  }
+}
+
+/* Corner decorations */
+.corner {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border: 2px solid var(--red);
+}
+
+.corner.top-left {
+  top: 20px;
+  left: 20px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.corner.top-right {
+  top: 20px;
+  right: 20px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.corner.bottom-left {
+  bottom: 20px;
+  left: 20px;
+  border-right: none;
+  border-top: none;
+}
+
+.corner.bottom-right {
+  bottom: 20px;
+  right: 20px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Pulse animation on corners during display */
+.comfyui-display.display .corner {
+  animation: corner-pulse 1s ease-in-out infinite;
+}
+
+@keyframes corner-pulse {
+  0%, 100% { 
+    opacity: 1;
+    box-shadow: 0 0 10px var(--red);
+  }
+  50% { 
+    opacity: 0.5;
+    box-shadow: 0 0 20px var(--red);
+  }
+}
+
+/* Flicker out fade */
+.comfyui-display.flicker-out {
+  animation: fade-out 3s forwards;
+}
+
+@keyframes fade-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Flicker in fade */
+.comfyui-display.flicker-in {
+  animation: fade-in 3s forwards;
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
