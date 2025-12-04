@@ -1,4 +1,4 @@
-/* GM Answer Key - Printable Cheat Sheet */
+/* GM Answer Key - COMPLETE Printable Cheat Sheet */
 
 .answer-key-page {
   background: #1a1a2e;
@@ -6,6 +6,8 @@
   padding: 30px;
   font-family: 'Courier New', Courier, monospace;
   color: #fff;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .answer-key-header {
@@ -70,7 +72,148 @@
   color: #1a1a2e;
 }
 
-/* Answers Table */
+/* Answer Sections */
+.answer-section {
+  background: #16213e;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 2px solid #0f3460;
+}
+
+.answer-section h2 {
+  color: #e94560;
+  margin: 0 0 15px 0;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-note {
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+.codes-table, .riddles-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.codes-table th, .riddles-table th {
+  background: #0f3460;
+  color: #4ecdc4;
+  padding: 10px;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.codes-table td, .riddles-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.codes-table .code-cell code,
+.riddles-table .answer-cell code {
+  background: #e94560;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.effect-cell {
+  color: #4ecdc4;
+  font-weight: bold;
+}
+
+.source-cell {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.question-cell {
+  max-width: 400px;
+  font-size: 0.85rem;
+}
+
+.diff-cell {
+  font-weight: bold;
+}
+
+.difficulty-easy .diff-cell { color: #4ecdc4; }
+.difficulty-medium .diff-cell { color: #f59e0b; }
+.difficulty-hard .diff-cell { color: #e94560; }
+
+.reward-cell {
+  color: #4ecdc4;
+  font-size: 0.85rem;
+}
+
+/* Quick Codes */
+.quick-codes {
+  background: #2d132c;
+  border: 2px solid #e94560;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 25px;
+}
+
+.quick-codes h3 {
+  color: #e94560;
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.codes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.codes-list code {
+  background: #e94560;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+/* Tips Section */
+.tips-section {
+  background: #16213e;
+  border: 2px solid #4ecdc4;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.tips-section h2 {
+  color: #4ecdc4;
+  margin: 0 0 15px 0;
+}
+
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.tip {
+  background: #0f3460;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.tip strong {
+  color: #4ecdc4;
+}
+
+/* Answers Table - Old styles kept for compatibility */
 .answers-table {
   margin-bottom: 30px;
   overflow-x: auto;

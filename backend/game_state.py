@@ -87,18 +87,29 @@ class GameState:
         return domains
     
     def _init_default_passwords(self):
-        """Initialize default passwords for testing."""
+        """Initialize default passwords - includes Intel Document challenge codes."""
         default_passwords = [
-            Password("FIREWALL_ALPHA", "financial", 15.0, True, False, "Check the firewall logs"),
-            Password("GRID_SECURE_7", "power", 20.0, True, False, "Power station access code"),
-            Password("MEDIC_OVERRIDE", "healthcare", 15.0, True, False, "Hospital emergency protocol"),
-            Password("ORBITAL_DECAY", "satellite", 25.0, True, False, "Satellite command sequence"),
+            # ═══════════════════════════════════════════════════════════════
+            # INTEL DOCUMENT CODES (12 sectors - from crypto challenges)
+            # ═══════════════════════════════════════════════════════════════
+            Password("VAULT_OPEN", "financial", 15.0, True, False, "Intel Doc: MD5 Hash"),
+            Password("SIGNAL_CLEAR", "telecom", 15.0, True, False, "Intel Doc: Base64"),
+            Password("GRID_ISOLATE", "power", 20.0, True, False, "Intel Doc: Hex Dump"),
+            Password("AQUA_SAFE", "water", 20.0, True, False, "Intel Doc: Elements"),
+            Password("FLIGHT_HALT", "transport", 15.0, True, False, "Intel Doc: Binary"),
+            Password("PATIENT_ZERO", "healthcare", 15.0, True, False, "Intel Doc: HL7"),
+            Password("DEFCON_ALPHA", "government", 25.0, True, False, "Intel Doc: XOR"),
+            Password("RESCUE_TEAM", "emergency", 20.0, True, False, "Intel Doc: Morse"),
+            Password("ORBIT_SYNC", "satellite", 25.0, True, False, "Intel Doc: Octal"),
+            Password("CARGO_STOP", "supply", 15.0, True, False, "Intel Doc: ROT13"),
+            Password("BROADCAST_OFF", "media", 15.0, True, False, "Intel Doc: URL Encode"),
+            Password("REACTOR_COLD", "nuclear", 30.0, True, False, "Intel Doc: Acrostic"),
+            
+            # ═══════════════════════════════════════════════════════════════
+            # SPECIAL CODES (master overrides)
+            # ═══════════════════════════════════════════════════════════════
             Password("GLOBAL_RESET", None, 10.0, True, False, "Affects all systems"),
             Password("BACKDOOR_EXIT", None, 5.0, False, False, "Reusable emergency code"),
-            Password("NUCLEAR_FAILSAFE", "nuclear", 30.0, True, False, "Reactor emergency shutdown"),
-            Password("WATER_PURGE", "water", 20.0, True, False, "Treatment plant override"),
-            Password("COMM_BLACKOUT", "telecom", 15.0, True, False, "Network isolation protocol"),
-            Password("EVAC_PROTOCOL", "emergency", 20.0, True, False, "Emergency services backup"),
         ]
         for pw in default_passwords:
             self.passwords[pw.code.upper()] = pw
