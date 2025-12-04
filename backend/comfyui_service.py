@@ -14,7 +14,11 @@ import os
 
 # Default settings - can be changed at runtime
 DEFAULT_COMFYUI_URL = "http://127.0.0.1:8188"
-DEFAULT_MODEL = "z-image.safetensors"  # Change to your preferred model
+
+# z-image turbo model files (stored in separate folders)
+ZIMAGE_UNET = "z_image_turbo_bf16.safetensors"  # diffusion_models/
+ZIMAGE_CLIP = "qwen_3_4b.safetensors"            # text_encoders/
+ZIMAGE_VAE = "ae.safetensors"                    # vae/
 
 # Prompt templates for different scenarios
 PROMPT_TEMPLATES = {
@@ -53,22 +57,24 @@ class ComfyUIService:
         
         # Configurable settings
         self.url = os.getenv("COMFYUI_URL", DEFAULT_COMFYUI_URL)
-        self.model_name = os.getenv("COMFYUI_MODEL", DEFAULT_MODEL)
-        self.image_width = 768
-        self.image_height = 768
-        self.steps = 20
-        self.cfg = 7.0
+        
+        # z-image turbo settings (optimized for speed)
+        self.image_width = 1024
+        self.image_height = 1024
+        self.steps = 9         # z-image turbo only needs 9 steps
+        self.cfg = 1.0         # cfg=1 for z-image turbo
+        self.sampler = "res_multistep"
+        self.scheduler = "simple"
+        self.shift = 3.0       # ModelSamplingAuraFlow shift
     
     def set_url(self, url: str):
         """Set the ComfyUI server URL."""
-        # Ensure no trailing slash
         self.url = url.rstrip('/')
         print(f"[ComfyUI] URL set to: {self.url}")
     
     def set_model(self, model_name: str):
-        """Set the model/checkpoint name."""
-        self.model_name = model_name
-        print(f"[ComfyUI] Model set to: {self.model_name}")
+        """Set the model - ignored for z-image turbo (uses fixed model files)."""
+        print(f"[ComfyUI] Using z-image turbo (fixed model files)")
     
     def set_image_size(self, width: int, height: int):
         """Set output image dimensions."""
@@ -86,7 +92,7 @@ class ComfyUIService:
         """Get current configuration."""
         return {
             "url": self.url,
-            "model_name": self.model_name,
+            "model_name": "z-image-turbo",
             "image_width": self.image_width,
             "image_height": self.image_height,
             "steps": self.steps,
@@ -105,64 +111,95 @@ class ComfyUIService:
     
     def _build_workflow(self, prompt: str, negative: str = NEGATIVE_PROMPT) -> Dict[str, Any]:
         """
-        Build a simple txt2img workflow for ComfyUI.
-        Uses configurable model and image settings.
+        Build z-image turbo workflow for ComfyUI.
+        Uses separate UNET/CLIP/VAE loaders with ModelSamplingAuraFlow.
         """
         workflow = {
-            "3": {
+            # Load UNET model
+            "46": {
                 "inputs": {
-                    "seed": random.randint(0, 2**32),
-                    "steps": self.steps,
-                    "cfg": self.cfg,
-                    "sampler_name": "euler",
-                    "scheduler": "normal",
-                    "denoise": 1,
-                    "model": ["4", 0],
-                    "positive": ["6", 0],
-                    "negative": ["7", 0],
-                    "latent_image": ["5", 0]
+                    "unet_name": ZIMAGE_UNET,
+                    "weight_dtype": "default"
                 },
-                "class_type": "KSampler"
+                "class_type": "UNETLoader"
             },
-            "4": {
+            # Load CLIP (text encoder)
+            "39": {
                 "inputs": {
-                    "ckpt_name": self.model_name  # Configurable model
+                    "clip_name": ZIMAGE_CLIP,
+                    "type": "lumina2",
+                    "device": "default"
                 },
-                "class_type": "CheckpointLoaderSimple"
+                "class_type": "CLIPLoader"
             },
-            "5": {
+            # Load VAE
+            "40": {
+                "inputs": {
+                    "vae_name": ZIMAGE_VAE
+                },
+                "class_type": "VAELoader"
+            },
+            # Encode prompt
+            "45": {
+                "inputs": {
+                    "text": prompt,
+                    "clip": ["39", 0]
+                },
+                "class_type": "CLIPTextEncode"
+            },
+            # Zero out conditioning for negative (z-image doesn't use negative prompts)
+            "42": {
+                "inputs": {
+                    "conditioning": ["45", 0]
+                },
+                "class_type": "ConditioningZeroOut"
+            },
+            # Apply ModelSamplingAuraFlow
+            "47": {
+                "inputs": {
+                    "model": ["46", 0],
+                    "shift": self.shift
+                },
+                "class_type": "ModelSamplingAuraFlow"
+            },
+            # Empty latent image (SD3 style for z-image)
+            "41": {
                 "inputs": {
                     "width": self.image_width,
                     "height": self.image_height,
                     "batch_size": 1
                 },
-                "class_type": "EmptyLatentImage"
+                "class_type": "EmptySD3LatentImage"
             },
-            "6": {
+            # KSampler
+            "44": {
                 "inputs": {
-                    "text": prompt,
-                    "clip": ["4", 1]
+                    "seed": random.randint(0, 2**63),
+                    "steps": self.steps,
+                    "cfg": self.cfg,
+                    "sampler_name": self.sampler,
+                    "scheduler": self.scheduler,
+                    "denoise": 1,
+                    "model": ["47", 0],
+                    "positive": ["45", 0],
+                    "negative": ["42", 0],
+                    "latent_image": ["41", 0]
                 },
-                "class_type": "CLIPTextEncode"
+                "class_type": "KSampler"
             },
-            "7": {
+            # VAE Decode
+            "43": {
                 "inputs": {
-                    "text": negative,
-                    "clip": ["4", 1]
-                },
-                "class_type": "CLIPTextEncode"
-            },
-            "8": {
-                "inputs": {
-                    "samples": ["3", 0],
-                    "vae": ["4", 2]
+                    "samples": ["44", 0],
+                    "vae": ["40", 0]
                 },
                 "class_type": "VAEDecode"
             },
+            # Save Image
             "9": {
                 "inputs": {
                     "filename_prefix": "ARDN",
-                    "images": ["8", 0]
+                    "images": ["43", 0]
                 },
                 "class_type": "SaveImage"
             }
