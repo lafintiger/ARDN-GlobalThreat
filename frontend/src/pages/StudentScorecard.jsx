@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { API_BASE } from '../config'
 import './StudentScorecard.css'
 
 // Default achievement columns with point values
@@ -75,7 +76,7 @@ function StudentScorecard() {
     }
     
     // Fetch game state
-    fetch('http://localhost:8333/api/state')
+    fetch(`${API_BASE}/api/state`)
       .then(res => res.json())
       .then(data => setGameState(data))
       .catch(() => {})
@@ -113,6 +114,48 @@ function StudentScorecard() {
       return total
     }, 0)
   }, [columns])
+
+  // Sync top students to backend for chat personalization
+  const syncTopStudents = useCallback(async () => {
+    // Get active students with names and their scores
+    const studentsWithScores = students
+      .filter(s => s.firstName || s.lastName)
+      .map(s => ({
+        name: `${s.firstName} ${s.lastName}`.trim(),
+        score: columns.reduce((total, col) => {
+          if (s.achievements[col.id]) {
+            return total + col.points
+          }
+          return total
+        }, 0)
+      }))
+      .filter(s => s.name)  // Must have a name
+      .sort((a, b) => b.score - a.score)  // Sort by score descending
+      .slice(0, 10)  // Top 10
+    
+    if (studentsWithScores.length === 0) return
+    
+    try {
+      await fetch(`${API_BASE}/api/students/top`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ students: studentsWithScores })
+      })
+    } catch (e) {
+      // Silently fail - backend might not be running
+    }
+  }, [students, columns])
+
+  // Sync top students periodically and on changes
+  useEffect(() => {
+    // Sync immediately
+    syncTopStudents()
+    
+    // Sync every 30 seconds
+    const interval = setInterval(syncTopStudents, 30000)
+    
+    return () => clearInterval(interval)
+  }, [syncTopStudents])
 
   // Add custom column
   const addColumn = () => {
