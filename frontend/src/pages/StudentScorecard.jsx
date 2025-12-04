@@ -95,15 +95,38 @@ function StudentScorecard() {
     ))
   }, [])
 
-  // Toggle achievement
+  // Toggle achievement and adjust threat level
   const toggleAchievement = useCallback((studentId, columnId) => {
-    setStudents(prev => prev.map(s => {
-      if (s.id !== studentId) return s
-      const newAchievements = { ...s.achievements }
-      newAchievements[columnId] = !newAchievements[columnId]
-      return { ...s, achievements: newAchievements }
-    }))
-  }, [])
+    // Find the column to get its point value
+    const column = columns.find(c => c.id === columnId)
+    const pointValue = column ? column.points : 0
+    
+    setStudents(prev => {
+      const student = prev.find(s => s.id === studentId)
+      if (!student) return prev
+      
+      const wasChecked = student.achievements[columnId]
+      const nowChecked = !wasChecked
+      
+      // If achievement is being checked ON and has positive points, reduce threat
+      // Threat reduction = points / 10 (so 10 points = 1% threat reduction)
+      if (pointValue > 0) {
+        const threatChange = nowChecked ? -(pointValue / 10) : (pointValue / 10)
+        fetch(`${API_BASE}/api/threat/adjust`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: threatChange })
+        }).catch(() => {})  // Silently fail if backend not running
+      }
+      
+      return prev.map(s => {
+        if (s.id !== studentId) return s
+        const newAchievements = { ...s.achievements }
+        newAchievements[columnId] = nowChecked
+        return { ...s, achievements: newAchievements }
+      })
+    })
+  }, [columns])
 
   // Calculate student total
   const calculateTotal = useCallback((student) => {

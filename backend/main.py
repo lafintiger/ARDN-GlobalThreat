@@ -224,6 +224,21 @@ async def adjust_score(data: ScoreAdjust):
     })
     return result
 
+class ThreatAdjust(BaseModel):
+    amount: float  # Positive = increase threat, Negative = reduce threat
+
+@app.post("/api/threat/adjust")
+async def adjust_threat(data: ThreatAdjust):
+    """Adjust all domain threat levels by amount (for scorecard achievements)"""
+    result = game_state.adjust_all_domains(data.amount)
+    await manager.broadcast({
+        "type": "state_update",
+        "data": game_state.get_state()
+    })
+    print(f"[GAME] Threat adjusted by {data.amount}%")
+    return result
+
+
 @app.post("/api/students/top")
 async def update_top_students(data: TopStudentsUpdate):
     """Update top students from frontend scorecard for chat personalization."""
