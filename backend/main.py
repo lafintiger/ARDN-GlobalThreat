@@ -73,6 +73,13 @@ class DomainUpdate(BaseModel):
 class ChatMessage(BaseModel):
     message: str
 
+class TopStudent(BaseModel):
+    name: str
+    score: int
+
+class TopStudentsUpdate(BaseModel):
+    students: List[TopStudent]
+
 
 # REST API Endpoints
 @app.get("/api/state")
@@ -215,6 +222,14 @@ async def adjust_score(data: ScoreAdjust):
         "type": "score_change",
         "data": result
     })
+    return result
+
+@app.post("/api/students/top")
+async def update_top_students(data: TopStudentsUpdate):
+    """Update top students from frontend scorecard for chat personalization."""
+    students = [{"name": s.name, "score": s.score} for s in data.students]
+    game_state.update_top_students(students)
+    return {"success": True, "count": len(students)}
     return result
 
 @app.post("/api/score/set/{value}")
@@ -1065,6 +1080,44 @@ async def websocket_chat(websocket: WebSocket):
     session.set_reward_callback(apply_reward)
     session.set_penalty_callback(apply_penalty)
     
+    # Set up image generation callback for contextual ComfyUI images
+    async def generate_contextual_image(prompt: str, trigger_type: str, context: str):
+        """Generate a ComfyUI image based on chat context"""
+        if not comfyui_service.enabled or comfyui_service.is_generating():
+            return
+        
+        connected = await comfyui_service.check_connection()
+        if not connected:
+            return
+        
+        try:
+            # Add student name to prompt if students are doing well
+            top_students = game_state.get_top_students(limit=3)
+            if top_students and trigger_type in ["defiance", "admiration"]:
+                # Personalize with student name
+                student_name = top_students[0].get("name", "").upper()
+                if student_name:
+                    prompt = f'{prompt}, text overlay saying "I SEE YOU {student_name}", warning message'
+            
+            print(f"[ComfyUI] Chat-triggered image ({trigger_type}): {prompt[:80]}...")
+            
+            image_bytes = await comfyui_service.generate_image(prompt)
+            if image_bytes:
+                import base64
+                image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+                await manager.broadcast({
+                    "type": "comfyui_image",
+                    "data": {
+                        "image": image_b64,
+                        "trigger_type": trigger_type,
+                        "context": context
+                    }
+                })
+        except Exception as e:
+            print(f"[ComfyUI] Chat image generation error: {e}")
+    
+    session.set_image_callback(generate_contextual_image)
+    
     try:
         while True:
             data = await websocket.receive_text()
@@ -1073,8 +1126,9 @@ async def websocket_chat(websocket: WebSocket):
             if msg.get("type") == "chat":
                 user_message = msg.get("message", "")
                 
-                # Update session with current threat level
+                # Update session with current threat level and student score
                 session.update_threat_level(game_state.global_threat_level)
+                session.update_student_score(game_state.student_score)
                 
                 # Stream AI response using challenge-aware session
                 ai_response = ""

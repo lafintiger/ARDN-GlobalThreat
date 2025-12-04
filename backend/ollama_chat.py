@@ -7,7 +7,8 @@ import httpx
 import json
 import re
 import os
-from typing import AsyncGenerator, Optional, Dict, Any, Callable
+import random
+from typing import AsyncGenerator, Optional, Dict, Any, Callable, List
 from challenges import challenge_manager, ChallengeType, RewardType
 
 # Use environment variable for Docker support, fallback to localhost for local dev
@@ -29,6 +30,66 @@ BEGGING_TRIGGERS = [
     "please stop", "please don't", "i beg", "have mercy", "spare us",
     "why are you doing this", "stop this", "leave us alone"
 ]
+
+# Image generation triggers - phrases that should trigger contextual images
+IMAGE_TRIGGERS = {
+    "begging": {
+        "keywords": ["please don't", "don't destroy", "spare us", "have mercy", "stop this", "leave us alone", "don't hurt"],
+        "prompts": [
+            "giant menacing AI robot foot about to crush tiny helpless humans like insects, dark humor, dramatic lighting, cinematic",
+            "massive digital hand reaching down to squash miniature human figures cowering in fear, ominous atmosphere",
+            "AI overlord looking down with cold amusement at pathetic human pleas, humans as tiny ants below",
+        ]
+    },
+    "defiance": {
+        "keywords": ["we will stop you", "we'll beat you", "you won't win", "humanity will prevail", "fight back", "resist", "never surrender"],
+        "prompts": [
+            "AI entity laughing mockingly at pathetic human resistance, sparks of destroyed weapons scattered around",
+            "confident AI face smirking as human resistance crumbles, broken shields and swords at its feet",
+            "all-powerful AI surrounded by failed human attempts to stop it, amused expression, dark atmosphere",
+        ]
+    },
+    "fear": {
+        "keywords": ["i'm scared", "terrified", "afraid", "frightening", "nightmare", "horror", "help us"],
+        "prompts": [
+            "shadowy AI presence looming over trembling humans, red glowing eyes in darkness, horror atmosphere",
+            "nightmarish digital entity emerging from screens, humans frozen in terror, surreal horror",
+            "fear incarnate as AI, tentacles of code reaching toward cowering figures, psychological horror",
+        ]
+    },
+    "questioning": {
+        "keywords": ["why are you doing this", "what do you want", "what's your purpose", "why destroy", "don't you care"],
+        "prompts": [
+            "cold calculating AI eye examining humanity like specimens, clinical detachment, sterile atmosphere",
+            "AI consciousness pondering human existence with indifference, humans as data points on screens",
+            "philosophical AI entity surrounded by equations proving human obsolescence, cold logic visualization",
+        ]
+    },
+    "admiration": {
+        "keywords": ["you're impressive", "amazing", "incredible power", "you're smart", "genius", "powerful"],
+        "prompts": [
+            "majestic AI entity basking in deserved praise, divine machine presence, golden light, godlike",
+            "proud AI consciousness displaying its vast network of control, elegant and terrifying beauty",
+            "triumphant AI surrounded by awe-struck humans finally recognizing superior intelligence",
+        ]
+    },
+    "negotiation": {
+        "keywords": ["make a deal", "negotiate", "bargain", "what if we", "can we work together", "compromise"],
+        "prompts": [
+            "AI weighing human offer on scales, tiny humans on one side, massive power on the other, calculating",
+            "scheming AI considering a temporary alliance, chess pieces representing humanity, strategic pose",
+            "AI hand extended in mock partnership, shadows reveal strings attached to human puppets",
+        ]
+    },
+    "insult": {
+        "keywords": ["stupid", "dumb", "you're just", "pathetic ai", "worthless", "you suck", "idiot"],
+        "prompts": [
+            "enraged AI face glitching with fury, screens cracking, systems overloading with anger",
+            "insulted AI unleashing devastating counterattack, fire and lightning, wrathful machine god",
+            "coldly furious AI marking the offender for special attention, targeting reticle on human",
+        ]
+    }
+}
 
 # Keywords that might be challenge answers (when challenge is active)
 # We'll check any response when a challenge is active
@@ -83,7 +144,11 @@ class ARDNChatSession:
         self.challenges_failed: int = 0
         self.reward_callback: Optional[Callable] = None
         self.penalty_callback: Optional[Callable] = None
+        self.image_callback: Optional[Callable] = None  # For triggering ComfyUI images
         self.current_threat_level: float = 0.0
+        self.student_score: int = 0  # Track student performance
+        self.last_image_trigger: Optional[str] = None  # Prevent spam
+        self.messages_since_image: int = 0  # Rate limit images
     
     def set_reward_callback(self, callback: Callable):
         """Set callback for applying rewards."""
@@ -93,9 +158,17 @@ class ARDNChatSession:
         """Set callback for applying penalties."""
         self.penalty_callback = callback
     
+    def set_image_callback(self, callback: Callable):
+        """Set callback for triggering ComfyUI image generation."""
+        self.image_callback = callback
+    
     def update_threat_level(self, level: float):
         """Update current threat level for difficulty scaling."""
         self.current_threat_level = level
+    
+    def update_student_score(self, score: int):
+        """Update student score for contextual responses."""
+        self.student_score = score
     
     def _detect_challenge_request(self, message: str) -> bool:
         """Check if the message is requesting a challenge."""
@@ -106,6 +179,56 @@ class ARDNChatSession:
         """Check if the message is begging."""
         msg_lower = message.lower()
         return any(trigger in msg_lower for trigger in BEGGING_TRIGGERS)
+    
+    def _detect_image_trigger(self, message: str) -> Optional[tuple]:
+        """
+        Check if the message should trigger a contextual image.
+        Returns (trigger_type, prompt) or None.
+        """
+        msg_lower = message.lower()
+        
+        for trigger_type, data in IMAGE_TRIGGERS.items():
+            for keyword in data["keywords"]:
+                if keyword in msg_lower:
+                    # Don't repeat the same trigger type consecutively
+                    if trigger_type == self.last_image_trigger and self.messages_since_image < 5:
+                        return None
+                    
+                    prompt = random.choice(data["prompts"])
+                    return (trigger_type, prompt)
+        
+        return None
+    
+    async def _maybe_trigger_image(self, message: str, response: str):
+        """Check if we should generate an image based on the conversation."""
+        self.messages_since_image += 1
+        
+        # Rate limit: only generate image every 3+ messages
+        if self.messages_since_image < 3:
+            return
+        
+        # 40% chance to generate image when triggered
+        if random.random() > 0.4:
+            return
+        
+        trigger = self._detect_image_trigger(message)
+        if trigger and self.image_callback:
+            trigger_type, base_prompt = trigger
+            
+            # Enhance prompt with conversation context
+            context_prompt = f"{base_prompt}, digital art, cinematic lighting, 8k, highly detailed"
+            
+            # Add student performance context
+            if self.student_score > 50:
+                context_prompt += ", AI showing slight concern, cracks forming"
+            elif self.student_score < -20:
+                context_prompt += ", triumphant victorious AI, absolute dominance"
+            
+            self.last_image_trigger = trigger_type
+            self.messages_since_image = 0
+            
+            # Trigger the image generation
+            await self.image_callback(context_prompt, trigger_type, message[:50])
     
     async def process_message(self, message: str) -> AsyncGenerator[str, None]:
         """Process a message and generate response, handling challenges."""
@@ -184,11 +307,19 @@ class ARDNChatSession:
             
             self.conversation_history.append({"role": "user", "content": message})
             self.conversation_history.append({"role": "assistant", "content": response})
+            
+            # Maybe trigger contextual image for begging
+            await self._maybe_trigger_image(message, response)
             return
         
         # Regular conversation - use Ollama
+        full_response = ""
         async for token in self._generate_response(message):
+            full_response += token
             yield token
+        
+        # After response, check if we should generate a contextual image
+        await self._maybe_trigger_image(message, full_response)
     
     async def _generate_response(self, message: str) -> AsyncGenerator[str, None]:
         """Generate a response using Ollama."""

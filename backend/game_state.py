@@ -4,7 +4,7 @@ Handles domain compromise levels, passwords, and game progression.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Callable
+from typing import Dict, List, Optional, Callable, Any
 import asyncio
 import random
 import time
@@ -45,6 +45,10 @@ class GameState:
         
         # Team score tracking
         self.score: int = 0
+        self.student_score: int = 0  # Alias for compatibility
+        
+        # Top students tracking (synced from frontend scorecard)
+        self.top_students: List[Dict] = []
         
         # Callbacks
         self.on_update_callbacks: List[Callable] = []
@@ -444,6 +448,20 @@ class GameState:
             "old_score": old_score,
             "new_score": self.score
         }
+    
+    def update_top_students(self, students: List[Dict[str, Any]]):
+        """
+        Update top students from frontend scorecard.
+        Expected format: [{"name": "Jose", "score": 45}, ...]
+        """
+        self.top_students = students[:10]  # Keep top 10
+        if students:
+            self.student_score = students[0].get("score", 0)
+        print(f"[GAME] Updated top students: {[s.get('name') for s in self.top_students[:3]]}")
+    
+    def get_top_students(self, limit: int = 3) -> List[Dict[str, Any]]:
+        """Get top performing students."""
+        return self.top_students[:limit]
     
     def reset(self):
         """Reset the game to initial state."""
