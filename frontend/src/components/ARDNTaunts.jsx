@@ -111,6 +111,7 @@ function ARDNTaunts({
   const threatLevelRef = useRef(threatLevel)
   const showTauntRef = useRef(null)
   const isSpeakingRef = useRef(false) // Prevent overlapping TTS
+  const voiceEnabledRef = useRef(voiceEnabled) // Track voice toggle
   
   // Check TTS availability on mount
   useEffect(() => {
@@ -128,7 +129,8 @@ function ARDNTaunts({
   
   // Speak taunt using TTS
   const speakTaunt = useCallback(async (text) => {
-    if (!voiceEnabled || !ttsAvailable || !text) return
+    // Use ref for voiceEnabled to always get current value
+    if (!voiceEnabledRef.current || !ttsAvailable || !text) return
     
     // Prevent overlapping TTS - skip if already speaking
     if (isSpeakingRef.current) return
@@ -175,7 +177,7 @@ function ARDNTaunts({
     } catch (e) {
       isSpeakingRef.current = false
     }
-  }, [voiceEnabled, ttsAvailable])
+  }, [ttsAvailable]) // Only depend on ttsAvailable - voiceEnabled uses ref
 
   // Get appropriate taunt category based on threat level
   const getTauntCategory = useCallback(() => {
@@ -269,7 +271,15 @@ function ARDNTaunts({
   useEffect(() => {
     gameActiveRef.current = gameActive
     threatLevelRef.current = threatLevel
-  }, [gameActive, threatLevel])
+    voiceEnabledRef.current = voiceEnabled
+    
+    // Stop any playing audio when voice is disabled
+    if (!voiceEnabled && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+      isSpeakingRef.current = false
+    }
+  }, [gameActive, threatLevel, voiceEnabled])
 
   // Random taunts during gameplay - runs once on mount
   useEffect(() => {
