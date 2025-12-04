@@ -225,74 +225,42 @@ class TTSService:
             return None
     
     async def _synthesize_wyoming(self, text: str) -> Optional[bytes]:
-        """Synthesize using Wyoming Piper protocol."""
+        """Synthesize using Wyoming Piper protocol with wyoming package."""
         try:
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(self._wyoming_host, self._wyoming_port),
-                timeout=5.0
-            )
+            from wyoming.client import AsyncTcpClient
+            from wyoming.tts import Synthesize
+            from wyoming.audio import AudioChunk, AudioStart, AudioStop
             
-            # Send synthesize request (Wyoming protocol)
-            # Wyoming uses newline-delimited JSON
-            request = {
-                "type": "synthesize",
-                "data": {
-                    "text": text,
-                    "voice": {
-                        "name": "en_US-lessac-medium",  # Default voice in container
-                    }
-                }
-            }
-            
-            # Send request
-            request_bytes = (json.dumps(request) + "\n").encode('utf-8')
-            writer.write(request_bytes)
-            await writer.drain()
-            
-            # Collect audio chunks
             audio_chunks = []
             sample_rate = 22050
             sample_width = 2
             channels = 1
             
-            while True:
-                # Read response header (newline-delimited JSON)
-                line = await asyncio.wait_for(reader.readline(), timeout=30.0)
-                if not line:
-                    break
+            async with AsyncTcpClient(self._wyoming_host, self._wyoming_port) as client:
+                # Send synthesize request
+                await client.write_event(Synthesize(text=text).event())
                 
-                try:
-                    response = json.loads(line.decode('utf-8'))
-                except json.JSONDecodeError:
-                    continue
-                
-                msg_type = response.get("type", "")
-                
-                if msg_type == "audio-start":
-                    # Get audio format
-                    data = response.get("data", {})
-                    sample_rate = data.get("rate", 22050)
-                    sample_width = data.get("width", 2)
-                    channels = data.get("channels", 1)
+                # Receive audio
+                while True:
+                    event = await asyncio.wait_for(client.read_event(), timeout=30.0)
                     
-                elif msg_type == "audio-chunk":
-                    # Read audio data (binary after header)
-                    payload = response.get("data", {})
-                    audio_len = payload.get("audio", {}).get("length", 0)
-                    if audio_len > 0:
-                        audio_data = await reader.readexactly(audio_len)
-                        audio_chunks.append(audio_data)
+                    if event is None:
+                        break
+                    
+                    if AudioStart.is_type(event.type):
+                        audio_start = AudioStart.from_event(event)
+                        sample_rate = audio_start.rate
+                        sample_width = audio_start.width
+                        channels = audio_start.channels
+                        print(f"[TTS] Audio format: {sample_rate}Hz, {sample_width*8}bit, {channels}ch")
                         
-                elif msg_type == "audio-stop":
-                    # Done receiving audio
-                    break
-                    
-                elif msg_type == "error":
-                    print(f"[TTS] Wyoming error: {response.get('data', {}).get('text', 'unknown')}")
-                    break
-            
-            writer.close()
-            await writer.wait_closed()
+                    elif AudioChunk.is_type(event.type):
+                        chunk = AudioChunk.from_event(event)
+                        audio_chunks.append(chunk.audio)
+                        
+                    elif AudioStop.is_type(event.type):
+                        print("[TTS] Audio stream complete")
+                        break
             
             if not audio_chunks:
                 print("[TTS] No audio received from Wyoming Piper")
@@ -300,18 +268,19 @@ class TTSService:
             
             # Combine chunks
             raw_audio = b''.join(audio_chunks)
+            print(f"[TTS] Raw audio: {len(raw_audio)} bytes")
             
             # Apply ominous audio processing
             audio_array = np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32)
             
             # Pitch shift down for ominous tone
-            pitch_factor = 0.75  # Less extreme for Wyoming (already good quality)
+            pitch_factor = 0.80  # Slightly lower pitch for menacing effect
             num_samples = int(len(audio_array) / pitch_factor)
             audio_pitched = signal.resample(audio_array, num_samples)
             
             # Add subtle bass boost
             b, a = signal.butter(2, 200 / (sample_rate / 2), btype='low')
-            bass = signal.filtfilt(b, a, audio_pitched) * 0.2
+            bass = signal.filtfilt(b, a, audio_pitched) * 0.15
             audio_processed = audio_pitched + bass
             
             # Normalize
