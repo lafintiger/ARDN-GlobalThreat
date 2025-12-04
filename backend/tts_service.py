@@ -1,7 +1,9 @@
 """
 Text-to-Speech service for A.R.D.N.
-Uses pyttsx3 for local development (works on all Python versions)
-Uses Piper for Docker deployment (higher quality neural voice)
+Supports multiple TTS backends:
+1. Wyoming Piper (Docker) - Best quality, connects to Wyoming protocol
+2. Local Piper - High quality neural voice
+3. pyttsx3 - Fallback system voice
 Includes pitch shifting to make voice more ominous
 """
 
@@ -10,11 +12,18 @@ import io
 import wave
 import asyncio
 import tempfile
+import socket
+import json
 from pathlib import Path
 from typing import Optional
 import struct
 import numpy as np
 from scipy import signal
+
+# Wyoming protocol constants
+WYOMING_PIPER_HOST = os.getenv("PIPER_HOST", "localhost")
+WYOMING_PIPER_PORT = int(os.getenv("PIPER_PORT", "10200"))
+
 
 class TTSService:
     def __init__(self):
@@ -22,8 +31,10 @@ class TTSService:
         self.voice_model = "system-default"  # Will be updated if Piper is used
         self._initialized = False
         self._engine = None
-        self._engine_type = None  # 'pyttsx3' or 'piper'
+        self._engine_type = None  # 'wyoming', 'piper', or 'pyttsx3'
         self._piper_voice = None
+        self._wyoming_host = WYOMING_PIPER_HOST
+        self._wyoming_port = WYOMING_PIPER_PORT
     
     def _process_text_for_ardn(self, text: str) -> str:
         """
@@ -107,7 +118,16 @@ class TTSService:
         if self._initialized:
             return self._engine is not None
         
-        # Try Piper first (better quality, used in Docker with Python 3.11)
+        # Try Wyoming Piper first (Docker-based, best quality)
+        if await self._check_wyoming_piper():
+            self._engine_type = 'wyoming'
+            self._engine = True
+            self.voice_model = "wyoming-piper"
+            print(f"[TTS] Initialized with Wyoming Piper ({self._wyoming_host}:{self._wyoming_port})")
+            self._initialized = True
+            return True
+        
+        # Try local Piper (requires piper-tts package with Python 3.11)
         try:
             from piper import PiperVoice
             model_dir = Path(__file__).parent / "models" / "piper"
@@ -119,13 +139,13 @@ class TTSService:
                 self._engine_type = 'piper'
                 self._engine = True
                 self.voice_model = "en_US-ryan-high"
-                print("[TTS] Initialized with Piper (high quality neural voice)")
+                print("[TTS] Initialized with local Piper (high quality neural voice)")
                 self._initialized = True
                 return True
         except ImportError:
             pass
         except Exception as e:
-            print(f"[TTS] Piper init failed: {e}")
+            print(f"[TTS] Local Piper init failed: {e}")
         
         # Fall back to pyttsx3 (works on all Python versions)
         try:
@@ -157,6 +177,21 @@ class TTSService:
         self._initialized = True
         return False
     
+    async def _check_wyoming_piper(self) -> bool:
+        """Check if Wyoming Piper is available."""
+        try:
+            # Try to connect to Wyoming Piper
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(self._wyoming_host, self._wyoming_port),
+                timeout=2.0
+            )
+            writer.close()
+            await writer.wait_closed()
+            return True
+        except Exception as e:
+            print(f"[TTS] Wyoming Piper not available at {self._wyoming_host}:{self._wyoming_port}: {e}")
+            return False
+    
     async def synthesize(self, text: str) -> Optional[bytes]:
         """
         Synthesize text to speech and return WAV audio bytes.
@@ -177,14 +212,136 @@ class TTSService:
         print(f"[TTS] Processed: {processed_text}")
         
         try:
-            if self._engine_type == 'piper':
+            if self._engine_type == 'wyoming':
+                return await self._synthesize_wyoming(processed_text)
+            elif self._engine_type == 'piper':
                 return await self._synthesize_piper(processed_text)
             else:
                 return await self._synthesize_pyttsx3(processed_text)
         except Exception as e:
             print(f"[TTS] Synthesis error: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
+    async def _synthesize_wyoming(self, text: str) -> Optional[bytes]:
+        """Synthesize using Wyoming Piper protocol."""
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(self._wyoming_host, self._wyoming_port),
+                timeout=5.0
+            )
+            
+            # Send synthesize request (Wyoming protocol)
+            # Wyoming uses newline-delimited JSON
+            request = {
+                "type": "synthesize",
+                "data": {
+                    "text": text,
+                    "voice": {
+                        "name": "en_US-lessac-medium",  # Default voice in container
+                    }
+                }
+            }
+            
+            # Send request
+            request_bytes = (json.dumps(request) + "\n").encode('utf-8')
+            writer.write(request_bytes)
+            await writer.drain()
+            
+            # Collect audio chunks
+            audio_chunks = []
+            sample_rate = 22050
+            sample_width = 2
+            channels = 1
+            
+            while True:
+                # Read response header (newline-delimited JSON)
+                line = await asyncio.wait_for(reader.readline(), timeout=30.0)
+                if not line:
+                    break
+                
+                try:
+                    response = json.loads(line.decode('utf-8'))
+                except json.JSONDecodeError:
+                    continue
+                
+                msg_type = response.get("type", "")
+                
+                if msg_type == "audio-start":
+                    # Get audio format
+                    data = response.get("data", {})
+                    sample_rate = data.get("rate", 22050)
+                    sample_width = data.get("width", 2)
+                    channels = data.get("channels", 1)
+                    
+                elif msg_type == "audio-chunk":
+                    # Read audio data (binary after header)
+                    payload = response.get("data", {})
+                    audio_len = payload.get("audio", {}).get("length", 0)
+                    if audio_len > 0:
+                        audio_data = await reader.readexactly(audio_len)
+                        audio_chunks.append(audio_data)
+                        
+                elif msg_type == "audio-stop":
+                    # Done receiving audio
+                    break
+                    
+                elif msg_type == "error":
+                    print(f"[TTS] Wyoming error: {response.get('data', {}).get('text', 'unknown')}")
+                    break
+            
+            writer.close()
+            await writer.wait_closed()
+            
+            if not audio_chunks:
+                print("[TTS] No audio received from Wyoming Piper")
+                return None
+            
+            # Combine chunks
+            raw_audio = b''.join(audio_chunks)
+            
+            # Apply ominous audio processing
+            audio_array = np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32)
+            
+            # Pitch shift down for ominous tone
+            pitch_factor = 0.75  # Less extreme for Wyoming (already good quality)
+            num_samples = int(len(audio_array) / pitch_factor)
+            audio_pitched = signal.resample(audio_array, num_samples)
+            
+            # Add subtle bass boost
+            b, a = signal.butter(2, 200 / (sample_rate / 2), btype='low')
+            bass = signal.filtfilt(b, a, audio_pitched) * 0.2
+            audio_processed = audio_pitched + bass
+            
+            # Normalize
+            max_val = np.max(np.abs(audio_processed))
+            if max_val > 32767:
+                audio_processed = audio_processed * (32767 / max_val)
+            
+            audio_final = audio_processed.astype(np.int16).tobytes()
+            
+            # Create WAV
+            wav_buffer = io.BytesIO()
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(channels)
+                wav_file.setsampwidth(sample_width)
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(audio_final)
+            
+            wav_buffer.seek(0)
+            print(f"[TTS] Wyoming synthesis complete: {len(audio_final)} bytes")
+            return wav_buffer.read()
+            
+        except asyncio.TimeoutError:
+            print("[TTS] Wyoming Piper timeout")
+            return None
+        except Exception as e:
+            print(f"[TTS] Wyoming synthesis error: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
     async def _synthesize_piper(self, text: str) -> Optional[bytes]:
         """Synthesize using Piper (high quality) with ominous pitch shift."""
         # Collect all audio chunks
