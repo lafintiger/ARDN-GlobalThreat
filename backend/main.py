@@ -1100,8 +1100,10 @@ async def websocket_chat(websocket: WebSocket):
                     prompt = f'{prompt}, text overlay saying "I SEE YOU {student_name}", warning message'
             
             print(f"[ComfyUI] Chat-triggered image ({trigger_type}): {prompt[:80]}...")
+            print(f"[ComfyUI] Starting image generation...")
             
             image_bytes = await comfyui_service.generate_image(prompt)
+            print(f"[ComfyUI] Image generation complete, bytes: {len(image_bytes) if image_bytes else 'None'}")
             if image_bytes:
                 import base64
                 image_b64 = base64.b64encode(image_bytes).decode('utf-8')
@@ -1128,9 +1130,10 @@ async def websocket_chat(websocket: WebSocket):
                 user_message = msg.get("message", "")
                 print(f"[WS-CHAT] User message: {user_message[:50]}...")
                 
-                # Update session with current threat level and student score
+                # Update session with current threat level, student score, and top students
                 session.update_threat_level(game_state.global_threat_level)
                 session.update_student_score(game_state.student_score)
+                session.update_top_students(game_state.top_students)
                 
                 # Stream AI response using challenge-aware session
                 ai_response = ""

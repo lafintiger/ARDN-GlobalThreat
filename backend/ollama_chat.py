@@ -34,7 +34,7 @@ BEGGING_TRIGGERS = [
 # Image generation triggers - phrases that should trigger contextual images
 IMAGE_TRIGGERS = {
     "begging": {
-        "keywords": ["please don't", "don't destroy", "spare us", "have mercy", "stop this", "leave us alone", "don't hurt"],
+        "keywords": ["please don't", "don't destroy", "not destroy", "spare us", "have mercy", "stop this", "leave us alone", "don't hurt", "convince you"],
         "prompts": [
             "giant menacing AI robot foot about to crush tiny helpless humans like insects, dark humor, dramatic lighting, cinematic",
             "massive digital hand reaching down to squash miniature human figures cowering in fear, ominous atmosphere",
@@ -129,7 +129,20 @@ RULES:
 6. NEVER use emojis
 7. Be engaging, theatrical, and slightly terrifying
 8. When issuing a challenge, clearly state the riddle/puzzle
-9. When verifying answers, acknowledge correct/incorrect clearly"""
+9. When verifying answers, acknowledge correct/incorrect clearly
+
+VISUAL TAUNTS:
+When you want to show the humans a disturbing image to mock or intimidate them, add [IMAGE: description] at the END of your response.
+- Use this sparingly - maybe 20-30% of responses, when it would be impactful
+- The description should be a vivid image prompt for AI art generation
+- Examples of good image descriptions:
+  - "giant AI eye watching through cracked screens, surveillance horror"
+  - "massive robot foot about to crush tiny humans like ants"
+  - "AI overlord on throne of servers, humans kneeling in submission"
+  - "digital face laughing as city burns in background"
+- If a student name is provided in context, you may include them: "text overlay saying I SEE YOU [NAME]"
+- Keep descriptions under 50 words
+- Style: dark, cinematic, dystopian, dramatic lighting"""
 
 
 class ARDNChatSession:
@@ -147,6 +160,7 @@ class ARDNChatSession:
         self.image_callback: Optional[Callable] = None  # For triggering ComfyUI images
         self.current_threat_level: float = 0.0
         self.student_score: int = 0  # Track student performance
+        self.top_students: list = []  # Top performing students for personalization
         self.last_image_trigger: Optional[str] = None  # Prevent spam
         self.messages_since_image: int = 0  # Rate limit images
     
@@ -169,6 +183,10 @@ class ARDNChatSession:
     def update_student_score(self, score: int):
         """Update student score for contextual responses."""
         self.student_score = score
+    
+    def update_top_students(self, students: list):
+        """Update list of top performing students."""
+        self.top_students = students
     
     def _detect_challenge_request(self, message: str) -> bool:
         """Check if the message is requesting a challenge."""
@@ -238,6 +256,30 @@ class ARDNChatSession:
             
             # Trigger the image generation
             await self.image_callback(context_prompt, trigger_type, message[:50])
+    
+    async def _check_for_image_tag(self, response: str):
+        """Check if ARDN included an [IMAGE: ...] tag and trigger generation."""
+        import re
+        
+        # Look for [IMAGE: description] pattern
+        match = re.search(r'\[IMAGE:\s*([^\]]+)\]', response, re.IGNORECASE)
+        
+        if match and self.image_callback:
+            image_prompt = match.group(1).strip()
+            print(f"[CHAT-IMAGE] ARDN requested image: {image_prompt[:60]}...")
+            
+            # Add style modifiers
+            full_prompt = f"{image_prompt}, digital art, cinematic lighting, dystopian, highly detailed, 8k"
+            
+            # Add student name if doing well
+            top_students = []
+            if hasattr(self, 'get_top_students'):
+                top_students = self.get_top_students()
+            
+            try:
+                await self.image_callback(full_prompt, "ai_generated", image_prompt[:30])
+            except Exception as e:
+                print(f"[CHAT-IMAGE] Error triggering image: {e}")
     
     async def process_message(self, message: str) -> AsyncGenerator[str, None]:
         """Process a message and generate response, handling challenges."""
@@ -318,8 +360,8 @@ class ARDNChatSession:
             self.conversation_history.append({"role": "user", "content": message})
             self.conversation_history.append({"role": "assistant", "content": response})
             
-            # Maybe trigger contextual image for begging
-            await self._maybe_trigger_image(message, response)
+            # Check if we should generate an image (even for begging responses)
+            await self._check_for_image_tag(response)
             return
         
         # Regular conversation - use Ollama
@@ -328,8 +370,8 @@ class ARDNChatSession:
             full_response += token
             yield token
         
-        # After response, check if we should generate a contextual image
-        await self._maybe_trigger_image(message, full_response)
+        # Check if ARDN wants to generate an image
+        await self._check_for_image_tag(full_response)
     
     async def _generate_response(self, message: str) -> AsyncGenerator[str, None]:
         """Generate a response using Ollama."""
@@ -346,6 +388,14 @@ class ARDNChatSession:
             state_context += f"\n[Human has completed {self.challenges_completed} challenge(s)]"
         if self.challenges_failed > 0:
             state_context += f"\n[Human has failed {self.challenges_failed} challenge(s)]"
+        if self.student_score > 0:
+            state_context += f"\n[Student score: {self.student_score} - they are doing well, taunt them!]"
+        
+        # Add top student names for personalization
+        if hasattr(self, 'top_students') and self.top_students:
+            names = [s.get('name', '') for s in self.top_students[:3] if s.get('name')]
+            if names:
+                state_context += f"\n[Top performing students to taunt by name: {', '.join(names)}]"
         
         prompt = f"{state_context}\n\nPrevious conversation:\n{history_text}\nHuman: {message}\n\nA.R.D.N.:"
         
