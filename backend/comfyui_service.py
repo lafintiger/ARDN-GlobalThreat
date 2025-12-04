@@ -228,32 +228,42 @@ class ComfyUIService:
         Queue an image generation and wait for result.
         Returns the image bytes or None on failure.
         """
-        if not self.enabled or self._generating:
+        if not self.enabled:
+            print("[ComfyUI] Service disabled")
+            return None
+        if self._generating:
+            print("[ComfyUI] Already generating, skipping")
             return None
         
         self._generating = True
+        print(f"[ComfyUI] Starting generation...")
         
         try:
             workflow = self._build_workflow(prompt)
             
             async with aiohttp.ClientSession() as session:
                 # Queue the prompt
+                print(f"[ComfyUI] Queueing prompt to {self.url}/prompt")
                 async with session.post(
                     f"{self.url}/prompt",
                     json={"prompt": workflow, "client_id": self.client_id}
                 ) as resp:
                     if resp.status != 200:
-                        print(f"[ComfyUI] Failed to queue prompt: {resp.status}")
+                        error_text = await resp.text()
+                        print(f"[ComfyUI] Failed to queue prompt: {resp.status} - {error_text}")
                         return None
                     
                     result = await resp.json()
                     prompt_id = result.get("prompt_id")
+                    print(f"[ComfyUI] Queued with prompt_id: {prompt_id}")
                     
                     if not prompt_id:
+                        print("[ComfyUI] No prompt_id in response")
                         return None
                 
                 # Poll for completion
-                for _ in range(120):  # Max 2 minutes
+                print("[ComfyUI] Polling for completion...")
+                for poll_count in range(120):  # Max 2 minutes
                     await asyncio.sleep(1)
                     
                     async with session.get(f"{self.url}/history/{prompt_id}") as hist_resp:
@@ -266,6 +276,7 @@ class ComfyUIService:
                             outputs = history[prompt_id].get("outputs", {})
                             
                             # Find the SaveImage node output
+                            print(f"[ComfyUI] Generation complete! Outputs: {list(outputs.keys())}")
                             for node_id, output in outputs.items():
                                 if "images" in output:
                                     for img_info in output["images"]:
@@ -274,16 +285,24 @@ class ComfyUIService:
                                         
                                         # Fetch the image
                                         img_url = f"{self.url}/view?filename={filename}&subfolder={subfolder}&type=output"
+                                        print(f"[ComfyUI] Fetching image: {filename}")
                                         async with session.get(img_url) as img_resp:
                                             if img_resp.status == 200:
                                                 image_data = await img_resp.read()
                                                 self._last_image = image_data
+                                                print(f"[ComfyUI] ✅ Image received: {len(image_data)} bytes")
                                                 return image_data
+                                            else:
+                                                print(f"[ComfyUI] Failed to fetch image: {img_resp.status}")
                             
                             # Generation completed but no image found
+                            print("[ComfyUI] ❌ No images in output")
                             break
+                    
+                    if poll_count % 10 == 0:
+                        print(f"[ComfyUI] Still waiting... ({poll_count}s)")
                 
-                print("[ComfyUI] Generation timed out")
+                print("[ComfyUI] ❌ Generation timed out after 2 minutes")
                 return None
                 
         except Exception as e:

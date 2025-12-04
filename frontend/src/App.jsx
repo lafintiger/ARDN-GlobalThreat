@@ -34,7 +34,8 @@ function App() {
   const [comfySettings, setComfySettings] = useState({
     url: 'http://127.0.0.1:8188',
     model_name: 'z-image.safetensors',
-    connected: false
+    connected: false,
+    generating: false
   })
   const prevThreatLevel = useRef(0)
   
@@ -231,9 +232,33 @@ function App() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ amount })
   })
-  const triggerComfyUI = (eventType, context = '') => fetch(`http://localhost:8333/api/comfyui/generate/event/${eventType}?context=${encodeURIComponent(context)}`, {
-    method: 'POST'
-  }).catch(err => console.log('ComfyUI not available:', err))
+  const triggerComfyUI = async (eventType, context = '') => {
+    if (comfySettings.generating) {
+      console.log('ComfyUI already generating, please wait...')
+      return
+    }
+    
+    setComfySettings(prev => ({ ...prev, generating: true }))
+    
+    try {
+      const response = await fetch(`http://localhost:8333/api/comfyui/generate/event/${eventType}?context=${encodeURIComponent(context)}`, {
+        method: 'POST'
+      })
+      
+      if (response.status === 409) {
+        console.log('ComfyUI already generating')
+      } else if (!response.ok) {
+        console.log('ComfyUI generation failed:', response.status)
+      }
+    } catch (err) {
+      console.log('ComfyUI not available:', err)
+    } finally {
+      // Image will be received via WebSocket, so we wait a bit before allowing new generation
+      setTimeout(() => {
+        setComfySettings(prev => ({ ...prev, generating: false }))
+      }, 2000)
+    }
+  }
   
   const updateComfyConfig = (updates) => fetch('http://localhost:8333/api/comfyui/config', {
     method: 'POST',
@@ -452,27 +477,32 @@ function App() {
               {/* Trigger Buttons */}
               <div className="comfy-buttons">
                 <button 
-                  className="btn-comfy"
+                  className={`btn-comfy ${comfySettings.generating ? 'generating' : ''}`}
                   onClick={() => triggerComfyUI('taunt')}
-                  disabled={!comfySettings.connected}
+                  disabled={!comfySettings.connected || comfySettings.generating}
                 >
-                  👁 TAUNT
+                  {comfySettings.generating ? '⏳' : '👁'} TAUNT
                 </button>
                 <button 
-                  className="btn-comfy"
+                  className={`btn-comfy ${comfySettings.generating ? 'generating' : ''}`}
                   onClick={() => triggerComfyUI('high_threat')}
-                  disabled={!comfySettings.connected}
+                  disabled={!comfySettings.connected || comfySettings.generating}
                 >
-                  ⚠ THREAT
+                  {comfySettings.generating ? '⏳' : '⚠'} THREAT
                 </button>
                 <button 
-                  className="btn-comfy"
+                  className={`btn-comfy ${comfySettings.generating ? 'generating' : ''}`}
                   onClick={() => triggerComfyUI('sector_fall', 'critical infrastructure')}
-                  disabled={!comfySettings.connected}
+                  disabled={!comfySettings.connected || comfySettings.generating}
                 >
-                  💀 DESTRUCTION
+                  {comfySettings.generating ? '⏳' : '💀'} DESTRUCTION
                 </button>
               </div>
+              {comfySettings.generating && (
+                <div className="comfy-generating-notice">
+                  🎨 Generating image... (~20s)
+                </div>
+              )}
             </div>
             
             {/* System Test Button */}
