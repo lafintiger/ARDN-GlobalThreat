@@ -13,7 +13,7 @@ import asyncio
 import json
 
 from game_state import game_state, Password
-from ollama_service import generate_ollama_attack, generate_fallback_sequence
+from ollama_service import generate_ollama_attack
 from ollama_chat import chat_with_ardn, get_or_create_session, ARDNChatSession
 from missions import mission_manager, Mission, MissionStatus, AdjustmentType
 from challenges import challenge_manager, CHALLENGE_LIBRARY, RewardType
