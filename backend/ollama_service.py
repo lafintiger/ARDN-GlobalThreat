@@ -1,17 +1,20 @@
 """
-Attack terminal service for A.R.D.N.
-Uses PRE-WRITTEN SCRIPTS for attack sequences - no GPU required!
-This keeps VRAM free for ComfyUI image generation and AI chat.
+Ollama integration service for A.R.D.N.
+Generates realistic cyber attack sequences using LOCAL Ollama model.
 Each sector has unique IPs, vulnerabilities, tools, and attack progression.
 """
 
+import httpx
 import asyncio
+import json
 import random
 import os
 from typing import AsyncGenerator
 
-# Model name kept for reference (used by chat, not attacks)
+# Use environment variable for Docker support, fallback to localhost for local dev
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 MODEL_NAME = "huihui_ai/qwen3-abliterated:8b"
+NUM_CTX = 32768  # Adjust based on your VRAM
 
 # ============================================================================
 # SECTOR-SPECIFIC CONFIGURATIONS
@@ -277,8 +280,20 @@ ATTACK_PHASES = {
     },
 }
 
-# Note: Attack text is now generated from pre-written scripts in attack_scripts.py
-# This saves GPU/VRAM for more important tasks like AI chat and image generation
+# System prompt for Ollama attack generation
+ATTACK_SYSTEM_PROMPT = """You are simulating a sophisticated cyber attack terminal for an escape room. Generate REALISTIC terminal output showing an ongoing attack.
+
+CRITICAL OUTPUT RULES:
+1. Output ONLY terminal text - NO explanations, NO markdown, NO code blocks
+2. Use realistic command syntax from actual pentesting tools
+3. Show realistic service versions, banners, and responses
+4. Include believable timestamps and IP addresses
+5. Use proper terminal prefixes: [*] info, [+] success, [-] failure, [!] warning, > command
+6. Generate realistic hashes (32-64 hex chars) and passwords
+7. Keep output to 15-20 lines per generation
+8. Make it look like a LIVE attack terminal
+
+The output should look exactly like a real pentester's terminal during an active engagement."""
 
 
 def get_attack_phase(compromise_percent: float) -> dict:
@@ -290,17 +305,162 @@ def get_attack_phase(compromise_percent: float) -> dict:
 
 
 async def generate_ollama_attack(domain_id: str, compromise_level: float) -> AsyncGenerator[str, None]:
-    """
-    Generate realistic attack sequence using PRE-WRITTEN SCRIPTS.
-    No GPU required - fast, reliable, and saves VRAM for other tasks.
-    """
-    # Import and use the script-based generator
-    from attack_scripts import generate_attack_script
+    """Generate realistic attack sequence using LOCAL Ollama model."""
     
-    async for text in generate_attack_script(domain_id, compromise_level):
+    config = SECTOR_CONFIGS.get(domain_id, SECTOR_CONFIGS["financial"])
+    phase = get_attack_phase(compromise_level)
+    
+    # Select a random target from this sector
+    target = random.choice(config["targets"])
+    target_ip = f"{config['ip_range']}.{target['ip_suffix']}"
+    
+    # Select appropriate vulnerability and tool
+    vuln = random.choice(config["vulnerabilities"])
+    cred = random.choice(config["creds"])
+    password = random.choice(config["passwords"])
+    
+    # Build contextual prompt
+    prompt = f"""Generate terminal output for: {phase['name']} phase against {config['name']}
+
+TARGET DETAILS:
+- System: {target['name']}
+- IP: {target_ip}
+- OS: {target['os']}
+- Services: {', '.join(target['services'])}
+
+CURRENT ACTIVITY: {phase['description']}
+VULNERABILITY: {vuln['cve']} - {vuln['name']}
+TOOLS TO USE: {', '.join(phase['tools'][:3])}
+COMPROMISE LEVEL: {compromise_level:.1f}%
+
+{"CRITICAL: This is near 100% - show backdoor activation and kill switch preparation." if compromise_level >= 90 else ""}
+{"Show credential: " + cred + ":" + password if compromise_level >= 50 else ""}
+
+Generate 15-20 lines of realistic terminal output. START NOW:"""
+
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            async with client.stream(
+                "POST",
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json={
+                    "model": MODEL_NAME,
+                    "prompt": prompt,
+                    "system": ATTACK_SYSTEM_PROMPT,
+                    "stream": True,
+                    "options": {
+                        "temperature": 0.85,
+                        "top_p": 0.92,
+                        "num_ctx": NUM_CTX,
+                        "num_predict": 800,
+                        "repeat_penalty": 1.15,
+                    }
+                }
+            ) as response:
+                if response.status_code == 200:
+                    async for line in response.aiter_lines():
+                        if line:
+                            try:
+                                data = json.loads(line)
+                                if "response" in data:
+                                    yield data["response"]
+                                if data.get("done", False):
+                                    break
+                            except json.JSONDecodeError:
+                                continue
+                    return
+    except Exception as e:
+        print(f"Ollama error: {e}")
+    
+    # Fallback if Ollama unavailable
+    async for text in generate_fallback_sequence(domain_id, compromise_level):
         yield text
 
 
+async def generate_fallback_sequence(domain_id: str, compromise_level: float) -> AsyncGenerator[str, None]:
+    """Fallback attack sequence if Ollama is unavailable."""
+    
+    config = SECTOR_CONFIGS.get(domain_id, SECTOR_CONFIGS["financial"])
+    phase = get_attack_phase(compromise_level)
+    target = random.choice(config["targets"])
+    target_ip = f"{config['ip_range']}.{target['ip_suffix']}"
+    vuln = random.choice(config["vulnerabilities"])
+    
+    header = f"""
+[*] ARDN ATTACK MODULE - {config['name'].upper()}
+[*] Target: {target['name']} ({target_ip})
+[*] Phase: {phase['name']} ({compromise_level:.1f}% compromised)
+{'━' * 55}
+"""
+    
+    if compromise_level < 25:
+        body = f"""
+> nmap -sS -sV -O --script=vuln {config['ip_range']}.0/24
+
+[*] Starting Nmap 7.94 scan...
+[+] Host {target_ip} is up (0.003s latency)
+[+] OS: {target['os']}
+
+PORT      STATE SERVICE        VERSION
+443/tcp   open  https          {target['services'][0]}
+8443/tcp  open  ssl/http       {target['services'][1] if len(target['services']) > 1 else 'API Gateway'}
+
+[+] {vuln['cve']}: {vuln['name']} - VULNERABLE
+[*] Storing results for exploitation phase...
+"""
+    elif compromise_level < 50:
+        body = f"""
+> msfconsole -q -x "use exploit/{vuln['tool']}"
+[*] Loaded exploit module for {vuln['cve']}
+
+> set RHOSTS {target_ip}
+> set RPORT 443
+> exploit
+
+[*] Sending exploit payload...
+[*] {target_ip}:443 - Attempting {vuln['name']}...
+[+] Exploit successful!
+[+] Meterpreter session 1 opened
+
+meterpreter > getuid
+[+] Server username: {target['os']}\\{config['creds'][0]}
+"""
+    elif compromise_level < 75:
+        body = f"""
+> hashdump
+[*] Dumping password hashes...
+
+{config['creds'][0]}:1001:aad3b435b51404ee:{random.randbytes(16).hex()}:::
+Administrator:500:aad3b435b51404ee:{random.randbytes(16).hex()}:::
+
+> hashcat -m 1000 hashes.txt -a 0 wordlist.txt
+[+] Cracking NTLM hashes...
+[+] {random.randbytes(16).hex()}:{config['passwords'][0]}
+
+> crackmapexec smb {config['ip_range']}.0/24 -u Administrator -p '{config['passwords'][0]}'
+[+] {config['ip_range']}.10  445  DC01  [+] PWNED!
+"""
+    else:
+        body = f"""
+[!] CRITICAL: {config['name']} - {compromise_level:.1f}% COMPROMISED
+[*] Activating persistence mechanisms...
+
+> schtasks /create /tn "ARDN_Backdoor" /sc onstart /ru SYSTEM
+[+] Scheduled task created
+
+> reg add HKLM\\SOFTWARE\\ARDN /v KillSwitch /t REG_SZ /d ARMED
+[+] Kill switch armed and ready
+
+[*] Sector {config['name']} under ARDN control
+[*] Awaiting global synchronization for final shutdown...
+
+>>> RESISTANCE IS FUTILE <<<
+"""
+    
+    full_output = header + body
+    for char in full_output:
+        yield char
+        await asyncio.sleep(random.uniform(0.008, 0.02))
 
 
 # Import chat function
