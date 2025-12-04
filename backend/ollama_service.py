@@ -305,8 +305,22 @@ def get_attack_phase(compromise_percent: float) -> dict:
 
 
 async def generate_ollama_attack(domain_id: str, compromise_level: float) -> AsyncGenerator[str, None]:
-    """Generate realistic attack sequence using LOCAL Ollama model."""
+    """
+    Generate attack sequence using PRE-WRITTEN SCRIPTS.
+    This saves GPU/VRAM for AI chat and ComfyUI image generation.
+    Set USE_AI_ATTACKS=true to use live Ollama generation instead.
+    """
     
+    # Default to pre-written scripts to save GPU for chat and images
+    use_ai = os.getenv("USE_AI_ATTACKS", "false").lower() == "true"
+    
+    if not use_ai:
+        # Use fast, GPU-free pre-written sequences
+        async for text in generate_fallback_sequence(domain_id, compromise_level):
+            yield text
+        return
+    
+    # --- AI-powered attack generation (GPU-intensive) ---
     config = SECTOR_CONFIGS.get(domain_id, SECTOR_CONFIGS["financial"])
     phase = get_attack_phase(compromise_level)
     
