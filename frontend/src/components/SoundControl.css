@@ -129,5 +129,52 @@
   min-width: 35px;
 }
 
+/* Voice Input/STT toggle */
+.voice-input-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--green-dim, #226622);
+  background: rgba(57, 255, 20, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  padding: 0;
+}
 
+.voice-input-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.voice-input-icon.muted {
+  opacity: 0.4;
+  filter: grayscale(100%);
+}
+
+.voice-input-toggle:hover {
+  background: rgba(57, 255, 20, 0.2);
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
+}
+
+.voice-input-toggle.enabled {
+  border-color: var(--green, #39ff14);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+}
+
+.voice-input-toggle.enabled .voice-input-icon {
+  opacity: 1;
+  filter: none;
+}
+
+.voice-input-toggle.disabled {
+  border-color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.voice-input-toggle.disabled:hover {
+  border-color: var(--green-dim, #226622);
+}
 

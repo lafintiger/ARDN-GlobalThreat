@@ -18,6 +18,7 @@ from ollama_chat import chat_with_ardn, get_or_create_session, ARDNChatSession
 from missions import mission_manager, Mission, MissionStatus, AdjustmentType
 from challenges import challenge_manager, CHALLENGE_LIBRARY, RewardType
 from tts_service import tts_service
+from stt_service import stt_service
 from comfyui_service import comfyui_service
 
 app = FastAPI(title="A.R.D.N. Control Interface")
@@ -788,6 +789,98 @@ async def reinitialize_tts():
         "voice_model": tts_service.voice_model,
         "message": "TTS reinitialized with " + (tts_service.get_engine_type() or "no engine")
     }
+
+
+# ============ STT (Speech-to-Text) ============
+
+class STTConfig(BaseModel):
+    enabled: bool
+
+@app.get("/api/stt/status")
+async def get_stt_status():
+    """Get STT service status."""
+    return stt_service.get_status()
+
+@app.post("/api/stt/config")
+async def set_stt_config(config: STTConfig):
+    """Enable or disable STT."""
+    stt_service.enabled = config.enabled
+    return {
+        "success": True,
+        "enabled": stt_service.enabled
+    }
+
+@app.post("/api/stt/transcribe")
+async def transcribe_audio(audio_data: bytes = None):
+    """
+    Transcribe audio to text.
+    Expects raw PCM audio (16-bit signed, mono, 16kHz).
+    """
+    from fastapi import Request
+    # This endpoint will receive audio via form data or raw body
+    raise HTTPException(status_code=501, detail="Use /api/stt/transcribe-wav for WAV uploads")
+
+@app.post("/api/stt/transcribe-wav")
+async def transcribe_wav(request: Request):
+    """
+    Transcribe WAV audio to text.
+    Accepts WAV audio file in request body.
+    """
+    import wave
+    import io
+    
+    if not stt_service.is_available():
+        # Initialize if not done
+        await stt_service.initialize()
+        if not stt_service.is_available():
+            raise HTTPException(
+                status_code=503, 
+                detail="STT service unavailable. Wyoming Whisper may not be running."
+            )
+    
+    # Get raw audio data from request
+    audio_bytes = await request.body()
+    
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="No audio data provided")
+    
+    try:
+        # Parse WAV file to extract PCM data
+        wav_file = io.BytesIO(audio_bytes)
+        with wave.open(wav_file, 'rb') as wav:
+            sample_rate = wav.getframerate()
+            n_channels = wav.getnchannels()
+            sample_width = wav.getsampwidth()
+            pcm_data = wav.readframes(wav.getnframes())
+            
+            print(f"[STT] Received audio: {sample_rate}Hz, {n_channels}ch, {sample_width*8}bit, {len(pcm_data)} bytes")
+            
+            # Convert to mono if stereo
+            if n_channels == 2:
+                import struct
+                samples = struct.unpack(f'<{len(pcm_data)//2}h', pcm_data)
+                mono_samples = [(samples[i] + samples[i+1]) // 2 for i in range(0, len(samples), 2)]
+                pcm_data = struct.pack(f'<{len(mono_samples)}h', *mono_samples)
+        
+        # Transcribe
+        transcript = await stt_service.transcribe(pcm_data, sample_rate)
+        
+        if transcript:
+            return {"success": True, "text": transcript}
+        else:
+            return {"success": False, "text": "", "error": "Transcription failed"}
+            
+    except Exception as e:
+        print(f"[STT] Transcription error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
+
+@app.post("/api/stt/reinitialize")
+async def reinitialize_stt():
+    """Force re-initialization of STT service."""
+    await stt_service.reinitialize()
+    return stt_service.get_status()
 
 
 # ============ ComfyUI Image Generation ============

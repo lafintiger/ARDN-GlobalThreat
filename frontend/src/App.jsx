@@ -29,6 +29,7 @@ function App() {
   const [gameStats, setGameStats] = useState(null)
   const [currentHint, setCurrentHint] = useState(null)
   const [voiceEnabled, setVoiceEnabled] = useState(true) // TTS voice toggle
+  const [voiceInputEnabled, setVoiceInputEnabled] = useState(false) // STT voice input toggle (off by default)
   const [musicExpanded, setMusicExpanded] = useState(false) // Music player toggle
   const [comfyImage, setComfyImage] = useState(null) // ComfyUI generated image
   const [comfySettings, setComfySettings] = useState({
@@ -349,6 +350,8 @@ function App() {
             onInitialize={initSound}
             voiceEnabled={voiceEnabled}
             onVoiceToggle={() => setVoiceEnabled(!voiceEnabled)}
+            voiceInputEnabled={voiceInputEnabled}
+            onVoiceInputToggle={() => setVoiceInputEnabled(!voiceInputEnabled)}
           />
           <div className={`connection-status ${connectionStatus}`}>
             <span className="status-dot" />
@@ -687,7 +690,7 @@ function App() {
           </div>
           
           <div className="chat-container">
-            <AIChat />
+            <AIChat voiceInputEnabled={voiceInputEnabled} />
           </div>
         </section>
       </main>
