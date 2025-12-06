@@ -332,6 +332,85 @@ Check browser console for:
 - Fixed by using refs (`currentTrackRef`, `shuffleRef`, `loopRef`) that stay in sync with state
 - Pattern: Use `useRef` + `useEffect` to keep refs updated, then read refs in event handlers
 
+### Wyoming Piper TTS Issues (IMPORTANT!)
+
+This is a **recurring issue**. Wyoming Piper (Docker TTS) can appear connected but fail to synthesize audio.
+
+#### Symptoms
+- Backend logs show: `[TTS] Initialized with Wyoming Piper (localhost:10200)` ✅
+- But TEST VOICE button does nothing, or requests hang forever
+- The Piper Docker container is running (`docker ps` shows it)
+
+#### Root Cause
+The TTS initialization only checks if port 10200 is **open**, not if Piper can actually **synthesize**. The Piper container sometimes gets into a stuck state where:
+- The port is open and accepting connections
+- But synthesis requests hang indefinitely
+
+#### Quick Fix (Do This First!)
+```powershell
+# 1. Restart Piper container
+docker restart piper
+
+# 2. Wait 5 seconds for it to fully initialize
+Start-Sleep -Seconds 5
+
+# 3. Restart the backend (kill and restart uvicorn)
+# Find the process ID from terminal output or use:
+Stop-Process -Name python -Force  # Or use specific PID
+
+# 4. Start backend again
+cd ARDN/backend; .\venv310\Scripts\activate; uvicorn main:app --host 0.0.0.0 --port 8333 --reload
+```
+
+#### API-Based Fix
+The backend now has a reinitialize endpoint:
+```bash
+curl -X POST http://localhost:8333/api/tts/reinitialize
+```
+This forces re-testing of Piper and falls back to pyttsx3 if it fails.
+
+#### Check TTS Status
+```bash
+curl http://localhost:8333/api/tts/status
+```
+Look for:
+- `engine_type`: Should be "wyoming" for Piper or "pyttsx3" for fallback
+- `wyoming_failures`: Number of consecutive failures (auto-fallback after 2)
+
+#### Verify Piper is Actually Working
+```bash
+# Check Piper logs
+docker logs piper --tail 20
+
+# Should show:
+# INFO:__main__:Ready
+# Connection to localhost (127.0.0.1) 10200 port [tcp/*] succeeded!
+```
+
+#### Start Order Matters!
+Always start services in this order:
+1. `docker start piper` - Start Piper first
+2. Wait 3-5 seconds for Piper to fully initialize
+3. Start backend (uvicorn) - Backend will test Piper during init
+
+#### Automatic Fallback
+The code now includes automatic fallback:
+- If Wyoming Piper fails 2 times consecutively, it auto-falls back to pyttsx3
+- You'll hear the robotic system voice instead of natural Piper voice
+- Use `/api/tts/reinitialize` to try Piper again after fixing it
+
+#### Page Stuck on "Loading Admin Panel..."
+If the frontend shows "Loading Admin Panel..." forever:
+1. The backend process may be dead or hung
+2. Kill all Python processes: `Stop-Process -Name python -Force`
+3. Restart both frontend and backend
+4. Refresh the browser
+
+#### Prevention
+- The `tts_service.py` now tests actual synthesis during init (not just port check)
+- If you see `[TTS] Wyoming Piper synthesis test PASSED` in logs, Piper is working
+- If you see `[TTS] Wyoming Piper synthesis test FAILED`, it fell back to pyttsx3
+
 ### React Closure Gotcha (Important!)
 
 When adding event listeners in `useEffect`, the handler captures state values at the time of creation. If state changes, the handler still sees the old value.
@@ -378,7 +457,7 @@ Key considerations:
 
 ---
 
-*Document last updated: December 6, 2024*
+*Document last updated: December 6, 2025*
 
 
 

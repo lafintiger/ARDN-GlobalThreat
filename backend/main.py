@@ -760,7 +760,9 @@ async def get_tts_status():
         "enabled": tts_service.enabled,
         "available": tts_service.is_available(),
         "initialized": tts_service._initialized,
-        "voice_model": tts_service.voice_model
+        "engine_type": tts_service.get_engine_type(),
+        "voice_model": tts_service.voice_model,
+        "wyoming_failures": tts_service._wyoming_consecutive_failures
     }
 
 @app.post("/api/tts/config")
@@ -770,6 +772,21 @@ async def set_tts_config(config: TTSConfig):
     return {
         "success": True,
         "enabled": tts_service.enabled
+    }
+
+@app.post("/api/tts/reinitialize")
+async def reinitialize_tts():
+    """
+    Force re-initialization of TTS service.
+    Use this if Wyoming Piper is not working properly.
+    Will re-test Piper connection and fall back to pyttsx3 if needed.
+    """
+    result = await tts_service.reinitialize()
+    return {
+        "success": result,
+        "engine_type": tts_service.get_engine_type(),
+        "voice_model": tts_service.voice_model,
+        "message": "TTS reinitialized with " + (tts_service.get_engine_type() or "no engine")
     }
 
 

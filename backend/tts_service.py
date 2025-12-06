@@ -35,6 +35,8 @@ class TTSService:
         self._piper_voice = None
         self._wyoming_host = WYOMING_PIPER_HOST
         self._wyoming_port = WYOMING_PIPER_PORT
+        self._wyoming_consecutive_failures = 0
+        self._max_wyoming_failures = 2  # Fall back to pyttsx3 after this many failures
     
     def _process_text_for_ardn(self, text: str) -> str:
         """
@@ -178,24 +180,82 @@ class TTSService:
         return False
     
     async def _check_wyoming_piper(self) -> bool:
-        """Check if Wyoming Piper is available."""
+        """Check if Wyoming Piper is available AND can actually synthesize."""
         try:
-            # Try to connect to Wyoming Piper
+            # First check if port is open
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(self._wyoming_host, self._wyoming_port),
                 timeout=2.0
             )
             writer.close()
             await writer.wait_closed()
-            return True
+            
+            # Now do a real synthesis test to ensure Piper is actually ready
+            # This catches the case where the port is open but Piper is hung/not ready
+            print(f"[TTS] Port {self._wyoming_port} is open, testing actual synthesis...")
+            test_result = await self._test_wyoming_synthesis()
+            if test_result:
+                print("[TTS] Wyoming Piper synthesis test PASSED")
+                return True
+            else:
+                print("[TTS] Wyoming Piper synthesis test FAILED - port open but synthesis not working")
+                return False
+                
         except Exception as e:
             print(f"[TTS] Wyoming Piper not available at {self._wyoming_host}:{self._wyoming_port}: {e}")
             return False
+    
+    async def _test_wyoming_synthesis(self) -> bool:
+        """Actually test that Wyoming Piper can synthesize audio (not just that port is open)."""
+        try:
+            from wyoming.client import AsyncTcpClient
+            from wyoming.tts import Synthesize
+            from wyoming.audio import AudioChunk, AudioStart, AudioStop
+            
+            async with AsyncTcpClient(self._wyoming_host, self._wyoming_port) as client:
+                # Send a minimal test synthesis
+                await client.write_event(Synthesize(text="test").event())
+                
+                # Wait for audio with a short timeout
+                got_audio = False
+                start_time = asyncio.get_event_loop().time()
+                while (asyncio.get_event_loop().time() - start_time) < 5.0:  # 5 second timeout
+                    event = await asyncio.wait_for(client.read_event(), timeout=5.0)
+                    
+                    if event is None:
+                        break
+                    
+                    if AudioChunk.is_type(event.type):
+                        got_audio = True
+                        
+                    elif AudioStop.is_type(event.type):
+                        break
+                
+                return got_audio
+                
+        except asyncio.TimeoutError:
+            print("[TTS] Wyoming Piper test synthesis timed out")
+            return False
+        except Exception as e:
+            print(f"[TTS] Wyoming Piper test synthesis error: {e}")
+            return False
+    
+    async def reinitialize(self):
+        """Force re-initialization of TTS. Use when Piper has issues."""
+        print("[TTS] Forcing re-initialization...")
+        self._initialized = False
+        self._engine = None
+        self._engine_type = None
+        self._wyoming_consecutive_failures = 0
+        return await self.initialize()
     
     async def synthesize(self, text: str) -> Optional[bytes]:
         """
         Synthesize text to speech and return WAV audio bytes.
         Returns None if TTS is not available.
+        
+        Includes automatic fallback: if Wyoming Piper fails multiple times,
+        automatically falls back to pyttsx3 for the session.
         """
         if not self.enabled:
             return None
@@ -213,7 +273,22 @@ class TTSService:
         
         try:
             if self._engine_type == 'wyoming':
-                return await self._synthesize_wyoming(processed_text)
+                result = await self._synthesize_wyoming(processed_text)
+                if result:
+                    self._wyoming_consecutive_failures = 0  # Reset on success
+                    return result
+                else:
+                    # Wyoming failed, track it
+                    self._wyoming_consecutive_failures += 1
+                    print(f"[TTS] Wyoming synthesis failed ({self._wyoming_consecutive_failures}/{self._max_wyoming_failures})")
+                    
+                    if self._wyoming_consecutive_failures >= self._max_wyoming_failures:
+                        print("[TTS] Too many Wyoming failures, falling back to pyttsx3...")
+                        await self._fallback_to_pyttsx3()
+                        if self._engine:
+                            return await self._synthesize_pyttsx3(processed_text)
+                    return None
+                    
             elif self._engine_type == 'piper':
                 return await self._synthesize_piper(processed_text)
             else:
@@ -222,7 +297,36 @@ class TTSService:
             print(f"[TTS] Synthesis error: {e}")
             import traceback
             traceback.print_exc()
+            
+            # If Wyoming failed with exception, also track it
+            if self._engine_type == 'wyoming':
+                self._wyoming_consecutive_failures += 1
+                if self._wyoming_consecutive_failures >= self._max_wyoming_failures:
+                    print("[TTS] Too many Wyoming failures, falling back to pyttsx3...")
+                    await self._fallback_to_pyttsx3()
+            
             return None
+    
+    async def _fallback_to_pyttsx3(self):
+        """Emergency fallback to pyttsx3 when Wyoming Piper is not working."""
+        try:
+            import pyttsx3
+            self._engine = pyttsx3.init()
+            self._engine_type = 'pyttsx3'
+            
+            voices = self._engine.getProperty('voices')
+            for voice in voices:
+                if 'male' in voice.name.lower() or 'david' in voice.name.lower():
+                    self._engine.setProperty('voice', voice.id)
+                    break
+            
+            self._engine.setProperty('rate', 140)
+            self._engine.setProperty('volume', 1.0)
+            self.voice_model = "pyttsx3-fallback"
+            print("[TTS] Fallback to pyttsx3 successful")
+        except Exception as e:
+            print(f"[TTS] Fallback to pyttsx3 failed: {e}")
+            self._engine = None
     
     async def _synthesize_wyoming(self, text: str) -> Optional[bytes]:
         """Synthesize using Wyoming Piper protocol with wyoming package."""
