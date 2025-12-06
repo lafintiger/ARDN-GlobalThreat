@@ -339,6 +339,80 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* System Tests Panel */}
+        <section className="admin-panel tests-panel">
+          <h2>🧪 Quick Tests</h2>
+          <div className="control-group" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <button 
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: 'I am watching you, human. Your resistance is futile.' })
+                  })
+                  if (res.ok) {
+                    const blob = await res.blob()
+                    const url = URL.createObjectURL(blob)
+                    const audio = new Audio(url)
+                    audio.volume = 0.8
+                    audio.play()
+                    audio.onended = () => URL.revokeObjectURL(url)
+                    showNotification('Voice test playing!', 'success')
+                  } else {
+                    showNotification('TTS failed', 'error')
+                  }
+                } catch (e) {
+                  showNotification('TTS error: ' + e.message, 'error')
+                }
+              }} 
+              className="btn btn-global"
+              style={{ background: 'linear-gradient(135deg, #9933ff, #6600cc)' }}
+            >
+              🎤 TEST VOICE
+            </button>
+            <button 
+              onClick={async () => {
+                try {
+                  showNotification('Generating image...', 'success')
+                  const res = await fetch(`${API_BASE}/api/comfyui/generate/event/taunt`, {
+                    method: 'POST'
+                  })
+                  if (res.ok) {
+                    showNotification('Image generated! Check main display.', 'success')
+                  } else {
+                    const err = await res.json()
+                    showNotification('ComfyUI error: ' + (err.detail || 'failed'), 'error')
+                  }
+                } catch (e) {
+                  showNotification('ComfyUI error: ' + e.message, 'error')
+                }
+              }} 
+              className="btn btn-global"
+              style={{ background: 'linear-gradient(135deg, #ff6600, #cc3300)' }}
+            >
+              🖼 TEST IMAGE
+            </button>
+            <button 
+              onClick={async () => {
+                const [ttsRes, comfyRes] = await Promise.all([
+                  fetch(`${API_BASE}/api/tts/status`),
+                  fetch(`${API_BASE}/api/comfyui/status`)
+                ])
+                const tts = await ttsRes.json()
+                const comfy = await comfyRes.json()
+                showNotification(
+                  `TTS: ${tts.available ? '✅' : '❌'} ${tts.voice_model} | ComfyUI: ${comfy.connected ? '✅' : '❌'}`,
+                  tts.available && comfy.connected ? 'success' : 'error'
+                )
+              }} 
+              className="btn btn-global"
+            >
+              📊 CHECK STATUS
+            </button>
+          </div>
+        </section>
+
         {/* Send Hints Panel */}
         <section className="admin-panel hints-panel">
           <h2>💡 Send Hint to Players</h2>

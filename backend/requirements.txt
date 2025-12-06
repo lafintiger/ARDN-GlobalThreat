@@ -6,4 +6,7 @@ aiohttp>=3.9.0
 python-dotenv>=1.0.0
 pydantic>=2.0.0
 pyttsx3>=2.90
+wyoming>=1.5.0
+numpy
+scipy
 # piper-tts>=1.2.0  # Requires Python 3.11 or lower (used in Docker)

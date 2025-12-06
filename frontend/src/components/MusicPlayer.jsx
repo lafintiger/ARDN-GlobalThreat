@@ -3,7 +3,7 @@
  * Plays MP3 files for atmosphere during the game
  */
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './MusicPlayer.css'
 
@@ -31,6 +31,16 @@ function MusicPlayer({ isExpanded = false, onToggle }) {
   const [duration, setDuration] = useState(0)
   const [hasError, setHasError] = useState(false)
   const audioRef = useRef(null)
+  
+  // Use refs to track current values for event handlers (avoid stale closures)
+  const currentTrackRef = useRef(currentTrack)
+  const shuffleRef = useRef(shuffle)
+  const loopRef = useRef(loop)
+  
+  // Keep refs in sync with state
+  useEffect(() => { currentTrackRef.current = currentTrack }, [currentTrack])
+  useEffect(() => { shuffleRef.current = shuffle }, [shuffle])
+  useEffect(() => { loopRef.current = loop }, [loop])
 
   // Initialize audio element
   useEffect(() => {
@@ -85,17 +95,18 @@ function MusicPlayer({ isExpanded = false, onToggle }) {
     }
   }
 
-  const handleTrackEnd = () => {
-    if (shuffle) {
+  const handleTrackEnd = useCallback(() => {
+    // Use refs to get current values (avoid stale closure)
+    if (shuffleRef.current) {
       const nextTrack = Math.floor(Math.random() * PLAYLIST.length)
       setCurrentTrack(nextTrack)
-    } else if (loop) {
-      const nextTrack = (currentTrack + 1) % PLAYLIST.length
+    } else if (loopRef.current) {
+      const nextTrack = (currentTrackRef.current + 1) % PLAYLIST.length
       setCurrentTrack(nextTrack)
     } else {
       setIsPlaying(false)
     }
-  }
+  }, [])
 
   const togglePlay = () => {
     if (!audioRef.current) return

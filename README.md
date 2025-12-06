@@ -111,13 +111,16 @@ docker exec -it ardn-ollama ollama pull huihui_ai/qwen3-abliterated:8b
 | `/intel` | Printable intel documents |
 | `/admin` | Full admin panel |
 
-### Admin Panel (⚙ button)
+### Admin Panel (⚙ button or `/admin`)
 
 - **Session Duration** - Set game length (30/40/60/90 min)
 - **START/STOP/RESET** - Control game state
 - **Score Controls** - +1/-1 buttons for team score
 - **ComfyUI Controls** - Trigger AI-generated images
-- **🧪 TEST ALL SYSTEMS** - One-click test of sound, voice, images, and connectivity
+- **🧪 Quick Tests** - Individual test buttons:
+  - **🎤 TEST VOICE** - Play a TTS voice taunt
+  - **🖼 TEST IMAGE** - Generate a ComfyUI image
+  - **📊 CHECK STATUS** - Show TTS and ComfyUI connection status
 
 ### Student Scorecard (`/scorecard`)
 

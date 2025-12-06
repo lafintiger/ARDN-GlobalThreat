@@ -277,13 +277,11 @@ The system is designed to run on a single GPU:
 
 ## Testing
 
-### TEST ALL SYSTEMS Button
-In the admin panel, click "🧪 TEST ALL SYSTEMS" to verify:
-- Ambient sound playback
-- TTS voice synthesis
-- ComfyUI connection
-- API connectivity
-- WebSocket connections
+### Quick Tests Panel (`/admin`)
+The admin page has a **🧪 Quick Tests** section with individual test buttons:
+- **🎤 TEST VOICE** - Synthesizes and plays a TTS taunt via Wyoming Piper
+- **🖼 TEST IMAGE** - Triggers ComfyUI to generate a taunt image (displays on main page)
+- **📊 CHECK STATUS** - Shows connection status for TTS and ComfyUI
 
 ### Manual Testing
 ```bash
@@ -329,6 +327,36 @@ Check browser console for:
 - Start Piper: `docker start piper`
 - Falls back to pyttsx3 automatically
 
+**Music player repeating first song**
+- This was a React closure bug - event handlers captured stale state values
+- Fixed by using refs (`currentTrackRef`, `shuffleRef`, `loopRef`) that stay in sync with state
+- Pattern: Use `useRef` + `useEffect` to keep refs updated, then read refs in event handlers
+
+### React Closure Gotcha (Important!)
+
+When adding event listeners in `useEffect`, the handler captures state values at the time of creation. If state changes, the handler still sees the old value.
+
+**Wrong:**
+```javascript
+useEffect(() => {
+  audio.addEventListener('ended', () => {
+    setTrack((current + 1) % total) // 'current' is stale!
+  })
+}, []) // Empty deps = handler never updates
+```
+
+**Correct:**
+```javascript
+const currentRef = useRef(current)
+useEffect(() => { currentRef.current = current }, [current])
+
+useEffect(() => {
+  audio.addEventListener('ended', () => {
+    setTrack((currentRef.current + 1) % total) // Always current value
+  })
+}, [])
+```
+
 ## Git Workflow
 
 ```bash
@@ -350,6 +378,10 @@ Key considerations:
 
 ---
 
-*Document last updated: December 2024*
+*Document last updated: December 6, 2024*
+
+
+
+
 
 
